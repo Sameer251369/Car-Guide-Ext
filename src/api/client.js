@@ -5,8 +5,8 @@ const RENDER_ORIGIN = 'https://car-guide-engine.onrender.com';
 const stripSlash = (value) => String(value || '').replace(/\/+$/, '');
 
 /**
- * Local `npm run dev`: same-origin `/api/v1` (Vite proxy → local Django or Render).
- * Production build: Render unless VITE_API_URL is set at build time.
+ * Local `npm run dev`: same-origin `/api/v1` via Vite proxy (local Django by default).
+ * Production build: Render API unless VITE_API_URL is overridden at build time.
  */
 const envOrigin = stripSlash(import.meta.env.VITE_API_URL);
 const API_ORIGIN = envOrigin || (import.meta.env.DEV ? '' : RENDER_ORIGIN);
@@ -25,10 +25,34 @@ const client = axios.create({
   withCredentials: true,
 });
 
-client.interceptors.request.use((config) => {
+let csrfTokenMemory = null;
+let csrfWarm = null;
+
+const resolveCsrfToken = async () => {
+  const fromCookie = getCookie('csrftoken');
+  if (fromCookie) {
+    csrfTokenMemory = fromCookie;
+    return fromCookie;
+  }
+  if (csrfTokenMemory) {
+    return csrfTokenMemory;
+  }
+  if (!csrfWarm) {
+    csrfWarm = axios
+      .get(`${API_BASE}/auth/csrf/`, { withCredentials: true })
+      .then((res) => {
+        csrfTokenMemory = res.data?.csrfToken || getCookie('csrftoken');
+        return csrfTokenMemory;
+      })
+      .catch(() => null);
+  }
+  return csrfWarm;
+};
+
+client.interceptors.request.use(async (config) => {
   const method = (config.method || 'get').toLowerCase();
   if (['post', 'put', 'patch', 'delete'].includes(method)) {
-    const csrfToken = getCookie('csrftoken');
+    const csrfToken = await resolveCsrfToken();
     if (csrfToken) {
       config.headers = {
         ...config.headers,
