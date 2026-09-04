@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import api from '../api/client';
+import api, { toAppMediaUrl } from '../api/client';
 import SEOHead from '../components/SEOHead';
 import { Car, Calculator, Fuel, ShieldCheck, Zap, ArrowLeft, CheckCircle2, ChevronRight } from 'lucide-react';
 
@@ -18,7 +18,9 @@ export default function VehicleDetail() {
 
   // Prepare image/gallery data and effect before any early returns so hooks order stays stable
   const _images = Array.isArray(vehicle?.images) ? vehicle.images.filter(Boolean) : [];
-  const validImagesPre = _images.filter((img) => img && img.image_url);
+  const validImagesPre = _images
+    .filter((img) => img && img.image_url)
+    .map((img) => ({ ...img, image_url: toAppMediaUrl(img.image_url) }));
   const primaryImgPre = validImagesPre.find((i) => i.is_primary)?.image_url || validImagesPre[0]?.image_url || 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800"><rect width="1200" height="800" fill="#0f172a"/><text x="600" y="420" text-anchor="middle" font-size="52" fill="#f8fafc" font-family="Arial">${(vehicle?.name || 'Vehicle').replace(/&/g, '&amp;')}</text></svg>`);
   React.useEffect(() => {
     setSelectedImage(primaryImgPre);

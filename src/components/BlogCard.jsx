@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Calendar, User, Clock, ArrowUpRight } from 'lucide-react';
+import { toAppMediaUrl } from '../api/client';
 
 export default function BlogCard({ article }) {
   const formattedDate = new Date(article.published_at).toLocaleDateString('en-IN', {
@@ -13,7 +14,7 @@ export default function BlogCard({ article }) {
     <article className="group rounded-2xl bg-slate-900/80 border border-slate-800/80 hover:border-slate-700 overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 flex flex-col h-full">
       <div className="relative aspect-[16/9] overflow-hidden bg-slate-950">
         <img
-          src={article.featured_image_url || 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?w=800'}
+          src={toAppMediaUrl(article.featured_image_url) || 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?w=800'}
           alt={article.title}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           loading="lazy"

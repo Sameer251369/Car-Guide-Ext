@@ -5,12 +5,26 @@ const RENDER_ORIGIN = 'https://car-guide-engine.onrender.com';
 const stripSlash = (value) => String(value || '').replace(/\/+$/, '');
 
 /**
- * Local `npm run dev`: same-origin `/api/v1` via Vite proxy (local Django by default).
- * Production build: Render API unless VITE_API_URL is overridden at build time.
+ * Default: same-origin `/api/v1` (Vite proxy locally, Vercel rewrites in production).
+ * Set VITE_API_URL only to call Django directly from the browser (requires CORS).
  */
-const envOrigin = stripSlash(import.meta.env.VITE_API_URL);
-const API_ORIGIN = envOrigin || (import.meta.env.DEV ? '' : RENDER_ORIGIN);
+const API_ORIGIN = stripSlash(import.meta.env.VITE_API_URL);
 const API_BASE = `${API_ORIGIN}/api/v1`;
+
+/** Django often returns absolute media URLs on Render; serve them via the same-origin rewrite. */
+export const toAppMediaUrl = (url) => {
+  if (!url || typeof url !== 'string') return url;
+  if (url.startsWith('/media/')) return url;
+  try {
+    const parsed = new URL(url);
+    if (parsed.origin === RENDER_ORIGIN && parsed.pathname.startsWith('/media/')) {
+      return `${parsed.pathname}${parsed.search}`;
+    }
+  } catch {
+    return url;
+  }
+  return url;
+};
 
 const getCookie = (name) => {
   const match = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));

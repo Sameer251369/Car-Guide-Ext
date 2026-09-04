@@ -1,7 +1,7 @@
 import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import api from '../api/client';
+import api, { toAppMediaUrl } from '../api/client';
 import SEOHead from '../components/SEOHead';
 import { Calendar, User, ArrowLeft, Calculator, ShieldCheck, Tag } from 'lucide-react';
 
@@ -84,7 +84,7 @@ export default function ArticleDetail() {
           {article.featured_image_url && (
             <div className="rounded-3xl overflow-hidden bg-slate-900 border border-slate-800 aspect-[16/9] shadow-2xl">
               <img
-                src={article.featured_image_url}
+                src={toAppMediaUrl(article.featured_image_url)}
                 alt={article.title}
                 className="w-full h-full object-cover"
               />

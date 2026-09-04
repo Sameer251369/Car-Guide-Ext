@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Calculator, ChevronRight, Fuel, Gauge, Zap } from 'lucide-react';
+import { toAppMediaUrl } from '../api/client';
 
 export default function VehicleCard({ vehicle }) {
   const isEv = vehicle.ev_hybrid_cng_flag === 'EV' || String(vehicle.fuel_type).toLowerCase() === 'electric';
@@ -22,7 +23,7 @@ export default function VehicleCard({ vehicle }) {
     <article className="group flex h-full flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-red-200 hover:shadow-lg">
       <div className="relative aspect-[16/10] bg-slate-100">
         <img
-          src={vehicle.primary_image || 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?w=900'}
+          src={toAppMediaUrl(vehicle.primary_image) || 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?w=900'}
           alt={`${vehicle.brand_name} ${vehicle.name}`}
           className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
           loading="lazy"

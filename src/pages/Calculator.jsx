@@ -11,6 +11,7 @@ import { Calculator as CalcIcon, ArrowRight, Sparkles, AlertTriangle, Shield, Sl
 export default function Calculator() {
   const [searchParams] = useSearchParams();
   const preselectedVehicleId = searchParams.get('vehicle');
+  const preselectedStateParam = searchParams.get('state');
 
   const [selectedVehicleId, setSelectedVehicleId] = useState(preselectedVehicleId || '');
   const [selectedStateId, setSelectedStateId] = useState('');
@@ -23,6 +24,16 @@ export default function Calculator() {
   const [breakdownResult, setBreakdownResult] = useState(null);
   const [leadRefId, setLeadRefId] = useState(null);
   const [modalError, setModalError] = useState(null);
+
+  // Remember verified lead in session to allow instant state comparison without repeated modal friction
+  const [unlockedUser, setUnlockedUser] = useState(() => {
+    try {
+      const saved = sessionStorage.getItem('carguide_lead_user');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
 
   // Fetch all 301 cars
   const { data: vehiclesData, isLoading: isVehiclesLoading } = useQuery({
@@ -42,9 +53,21 @@ export default function Calculator() {
 
   useEffect(() => {
     if (states.length > 0 && !selectedStateId) {
+      if (preselectedStateParam) {
+        const matched = states.find(
+          (s) =>
+            String(s.id) === String(preselectedStateParam) ||
+            s.code.toUpperCase() === preselectedStateParam.toUpperCase() ||
+            s.name.toLowerCase().includes(preselectedStateParam.toLowerCase())
+        );
+        if (matched) {
+          setSelectedStateId(matched.id);
+          return;
+        }
+      }
       setSelectedStateId(states[0].id);
     }
-  }, [states, selectedStateId]);
+  }, [states, selectedStateId, preselectedStateParam]);
 
   // Set default vehicle if preselected or first loaded
   useEffect(() => {
@@ -101,14 +124,37 @@ export default function Calculator() {
       return;
     }
 
+    // If user already submitted gate in this browser session, calculate directly
+    if (unlockedUser) {
+      leadMutation.mutate({
+        name: unlockedUser.name,
+        phone_number: unlockedUser.phone_number,
+        city: unlockedUser.city,
+        vehicle_id: Number(selectedVehicleId),
+        state_id: Number(selectedStateId),
+        variant_tier: variantTier,
+        custom_ex_showroom: useCustomPrice && customExShowroom ? Number(customExShowroom) : null,
+        fuel_type: activeVehicle?.fuel_type || '',
+        ownership_type: ownershipType,
+        is_financed: isFinanced,
+        source_page: 'calculator_recalc',
+      });
+      return;
+    }
+
     setIsGateOpen(true);
   };
 
   const handleGateSubmit = ({ name, phone_number, city }) => {
+    const userData = { name, phone_number, city };
+    setUnlockedUser(userData);
+    try {
+      sessionStorage.setItem('carguide_lead_user', JSON.stringify(userData));
+    } catch {
+      // ignore storage failure
+    }
     leadMutation.mutate({
-      name,
-      phone_number,
-      city,
+      ...userData,
       vehicle_id: Number(selectedVehicleId),
       state_id: Number(selectedStateId),
       variant_tier: variantTier,
@@ -390,12 +436,19 @@ export default function Calculator() {
             <div className="pt-6 border-t border-slate-200">
               <button
                 type="button"
+                disabled={leadMutation.isPending}
                 onClick={handleCalculateClick}
-                className="w-full py-4 px-6 rounded-md bg-red-600 hover:bg-red-700 text-white font-extrabold text-sm shadow-lg shadow-red-100 transition-all flex items-center justify-center space-x-2 group"
+                className="w-full py-4 px-6 rounded-md bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white font-extrabold text-sm shadow-lg shadow-red-100 transition-all flex items-center justify-center space-x-2 group"
               >
                 <Sparkles className="w-5 h-5 text-white group-hover:rotate-12 transition-transform" />
                 <span>
-                  {activeVehicle?.is_tba ? 'View TBA Status Notice' : 'Calculate & Unlock On-Road Price'}
+                  {activeVehicle?.is_tba
+                    ? 'View TBA Status Notice'
+                    : leadMutation.isPending
+                    ? 'Calculating On-Road Price...'
+                    : unlockedUser
+                    ? 'Calculate On-Road Price'
+                    : 'Calculate & Unlock On-Road Price'}
                 </span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </button>
