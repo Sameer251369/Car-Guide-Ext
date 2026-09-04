@@ -85,6 +85,13 @@ export default function Calculator() {
       setModalError(null);
     },
     onError: (error) => {
+      setUnlockedUser(null);
+      try {
+        sessionStorage.removeItem('carguide_lead_user');
+      } catch {
+        // ignore storage failure
+      }
+      setIsGateOpen(true);
       const errorMsg = error?.response?.data?.error || 
                        error?.response?.data?.detail ||
                        error?.message ||
@@ -147,12 +154,6 @@ export default function Calculator() {
 
   const handleGateSubmit = ({ name, phone_number, city }) => {
     const userData = { name, phone_number, city };
-    setUnlockedUser(userData);
-    try {
-      sessionStorage.setItem('carguide_lead_user', JSON.stringify(userData));
-    } catch {
-      // ignore storage failure
-    }
     leadMutation.mutate({
       ...userData,
       vehicle_id: Number(selectedVehicleId),
