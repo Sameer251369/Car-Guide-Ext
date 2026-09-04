@@ -8,7 +8,19 @@ const stripSlash = (value) => String(value || '').replace(/\/+$/, '');
  * Default: same-origin `/api/v1` (Vite proxy locally, Vercel rewrites in production).
  * Set VITE_API_URL only to call Django directly from the browser (requires CORS).
  */
-const API_ORIGIN = stripSlash(import.meta.env.VITE_API_URL || '');
+const getApiOrigin = () => {
+  const configured = stripSlash(import.meta.env.VITE_API_URL || '');
+  if (configured) return configured;
+
+  const host = typeof window !== 'undefined' ? window.location.hostname : '';
+  if (host.endsWith('vercel.app') || host.includes('localhost') || host.includes('127.0.0.1')) {
+    return host.includes('localhost') || host.includes('127.0.0.1') ? '' : RENDER_ORIGIN;
+  }
+
+  return '';
+};
+
+const API_ORIGIN = getApiOrigin();
 const API_BASE = API_ORIGIN ? `${API_ORIGIN}/api/v1` : '/api/v1';
 
 /** Django often returns absolute media URLs on Render; serve them via the same-origin rewrite. */
