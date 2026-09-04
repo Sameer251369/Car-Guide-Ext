@@ -37,11 +37,15 @@ export default function Portfolio() {
     queryFn: () => api.getVehicles(queryParams),
   });
 
-  const vehicles = vehiclesData?.results || vehiclesData || [];
+  const vehicles = Array.isArray(vehiclesData?.results)
+    ? vehiclesData.results
+    : Array.isArray(vehiclesData)
+      ? vehiclesData
+      : [];
   const totalCount = vehiclesData?.count || vehicles.length;
-  const brands = facets?.brands || [];
-  const bodyTypes = facets?.body_types || [];
-  const fuelTypes = facets?.fuel_types || [];
+  const brands = Array.isArray(facets?.brands) ? facets.brands : [];
+  const bodyTypes = Array.isArray(facets?.body_types) ? facets.body_types : [];
+  const fuelTypes = Array.isArray(facets?.fuel_types) ? facets.fuel_types : [];
 
   const handleReset = () => {
     setSearchQuery('');

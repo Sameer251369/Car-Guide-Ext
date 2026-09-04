@@ -25,7 +25,12 @@ export default function Home() {
     queryFn: () => api.getArticles({ page_size: 3 }),
   });
 
-  const allVehicles = vehiclesData?.results || vehiclesData || [];
+  const allVehicles = Array.isArray(vehiclesData?.results)
+    ? vehiclesData.results
+    : Array.isArray(vehiclesData)
+      ? vehiclesData
+      : [];
+
   const vehicles = useMemo(() => {
     if (selectedBudget === 'under10') {
       return allVehicles.filter((v) => Number(v.starting_price || v.ex_showroom_price) <= 1000000).slice(0, 8);
@@ -39,7 +44,11 @@ export default function Home() {
     return allVehicles.filter((v) => Number(v.starting_price || v.ex_showroom_price) > 2000000).slice(0, 8);
   }, [allVehicles, selectedBudget]);
 
-  const articles = articlesData?.results || articlesData || [];
+  const articles = Array.isArray(articlesData?.results)
+    ? articlesData.results
+    : Array.isArray(articlesData)
+      ? articlesData
+      : [];
 
   const budgetTabs = [
     { label: 'Cars Under 10 Lakh', value: 'under10' },
@@ -103,7 +112,7 @@ export default function Home() {
 
           <div className="overflow-hidden rounded-lg border border-slate-200 bg-slate-100">
             <img
-              src="https://imgd.aeplcdn.com/0x0/n/cw/ec/141867/mahindra-xuv700-left-front-three-quarter2.jpeg"
+              src="https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=1200&q=80"
               alt="New car search"
               className="h-full min-h-[320px] w-full object-cover"
             />
