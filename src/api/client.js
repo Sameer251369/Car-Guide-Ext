@@ -55,11 +55,6 @@ let csrfTokenMemory = null;
 let csrfWarm = null;
 
 const resolveCsrfToken = async () => {
-  const fromCookie = getCookie('csrftoken');
-  if (fromCookie) {
-    csrfTokenMemory = fromCookie;
-    return fromCookie;
-  }
   if (csrfTokenMemory) {
     return csrfTokenMemory;
   }
@@ -72,7 +67,9 @@ const resolveCsrfToken = async () => {
       })
       .catch(() => null);
   }
-  return csrfWarm;
+  const token = await csrfWarm;
+  if (token) return token;
+  return getCookie('csrftoken');
 };
 
 client.interceptors.request.use(async (config) => {
@@ -87,6 +84,30 @@ client.interceptors.request.use(async (config) => {
     }
   }
   return config;
+});
+
+let csrfRetryInProgress = false;
+client.interceptors.response.use(undefined, async (error) => {
+  const request = error.config;
+  if (error.response?.status === 403 && request && !request._csrfRetried && !csrfRetryInProgress) {
+    const detail = JSON.stringify(error.response.data || '').toLowerCase();
+    if (detail.includes('csrf')) {
+      request._csrfRetried = true;
+      csrfTokenMemory = null;
+      csrfWarm = null;
+      csrfRetryInProgress = true;
+      try {
+        const token = await resolveCsrfToken();
+        if (token) {
+          request.headers = { ...request.headers, 'X-CSRFToken': token };
+          return client(request);
+        }
+      } finally {
+        csrfRetryInProgress = false;
+      }
+    }
+  }
+  return Promise.reject(error);
 });
 
 export const api = {
