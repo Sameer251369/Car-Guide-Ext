@@ -137,9 +137,7 @@ export const api = {
   },
 
   createAdminVehicle: async (payload) => {
-    const res = await client.post('/admin/vehicles/', payload, {
-      headers: payload instanceof FormData ? { 'Content-Type': 'multipart/form-data' } : undefined,
-    });
+    const res = await client.post('/admin/vehicles/', payload);
     return res.data;
   },
 

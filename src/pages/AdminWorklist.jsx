@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import api from '../api/client';
@@ -7,6 +7,7 @@ import SEOHead from '../components/SEOHead';
 export default function AdminWorklist({ onLogout }) {
   const queryClient = useQueryClient();
   const [leadFilter, setLeadFilter] = useState('all');
+  const [leadPage, setLeadPage] = useState(1);
   const [vehicleForm, setVehicleForm] = useState({
     brand_name: '',
     name: '',
@@ -24,14 +25,26 @@ export default function AdminWorklist({ onLogout }) {
     meta_description: '',
   });
   const [primaryImage, setPrimaryImage] = useState(null);
+  const [vehicleImages, setVehicleImages] = useState({
+    front_image: null,
+    exterior_image: null,
+    interior_image: null,
+    rear_image: null,
+  });
   const [publishedVehicle, setPublishedVehicle] = useState(null);
 
   const { data, isLoading, refetch } = useQuery({
-    queryKey: ['admin-leads', leadFilter],
-    queryFn: () => api.getAdminLeads({ is_exported: leadFilter === 'all' ? undefined : leadFilter }),
+    queryKey: ['admin-leads', leadFilter, leadPage],
+    queryFn: () => api.getAdminLeads({ is_exported: leadFilter === 'all' ? undefined : leadFilter, page: leadPage }),
   });
 
   const leads = data?.results || [];
+  const leadCount = data?.count || 0;
+  const leadPageCount = Math.max(1, Math.ceil(leadCount / (data?.page_size || 10)));
+
+  useEffect(() => {
+    setLeadPage(1);
+  }, [leadFilter]);
 
   const publishVehicleMutation = useMutation({
     mutationFn: (payload) => api.createAdminVehicle(payload),
@@ -54,16 +67,24 @@ export default function AdminWorklist({ onLogout }) {
         meta_description: '',
       });
       setPrimaryImage(null);
+      setVehicleImages({ front_image: null, exterior_image: null, interior_image: null, rear_image: null });
       queryClient.invalidateQueries({ queryKey: ['vehicles-301'] });
       queryClient.invalidateQueries({ queryKey: ['vehicle-facets'] });
     },
   });
 
   const summary = useMemo(() => {
-    const total = leads.length;
+    const total = leadCount;
     const exported = leads.filter((lead) => lead.is_exported).length;
     return { total, exported };
-  }, [leads]);
+  }, [leadCount, leads]);
+
+  const publishError = publishVehicleMutation.error?.response?.data;
+  const publishErrorMessage = publishError
+    ? Object.entries(publishError)
+      .flatMap(([field, messages]) => (Array.isArray(messages) ? messages.map((message) => `${field}: ${message}`) : [String(messages)]))
+      .join(' ')
+    : 'Could not publish car.';
 
   const handleExportLeads = async () => {
     try {
@@ -90,6 +111,11 @@ export default function AdminWorklist({ onLogout }) {
     setVehicleForm((prev) => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
   };
 
+  const handleVehicleImage = (event) => {
+    const { name, files } = event.target;
+    setVehicleImages((previous) => ({ ...previous, [name]: files?.[0] || null }));
+  };
+
   const handlePublishVehicle = (event) => {
     event.preventDefault();
     setPublishedVehicle(null);
@@ -110,6 +136,9 @@ export default function AdminWorklist({ onLogout }) {
     if (primaryImage) {
       payload.append('primary_image', primaryImage);
     }
+    Object.entries(vehicleImages).forEach(([key, image]) => {
+      if (image) payload.append(key, image);
+    });
 
     publishVehicleMutation.mutate(payload);
   };
@@ -200,15 +229,27 @@ export default function AdminWorklist({ onLogout }) {
                 </select>
               </label>
 
-              <label className="text-sm text-slate-300 lg:col-span-2">
-                <span className="mb-1.5 block">Primary car image</span>
+              <label className="text-sm text-slate-300">
+                <span className="mb-1.5 block">Front side image</span>
                 <input
+                  name="front_image"
                   type="file"
                   accept="image/*"
-                  onChange={(event) => setPrimaryImage(event.target.files?.[0] || null)}
+                  onChange={handleVehicleImage}
                   className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-300 file:mr-3 file:rounded-md file:border-0 file:bg-amber-500 file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-slate-950"
                 />
               </label>
+
+              {[
+                ['exterior_image', 'Exterior / side image'],
+                ['interior_image', 'Interior image'],
+                ['rear_image', 'Backside / rear image'],
+              ].map(([name, label]) => (
+                <label key={name} className="text-sm text-slate-300">
+                  <span className="mb-1.5 block">{label}</span>
+                  <input name={name} type="file" accept="image/*" onChange={handleVehicleImage} className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-300 file:mr-3 file:rounded-md file:border-0 file:bg-amber-500 file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-slate-950" />
+                </label>
+              ))}
 
               <label className="text-sm text-slate-300 lg:col-span-4">
                 <span className="mb-1.5 block">Vehicle description</span>
@@ -260,7 +301,7 @@ export default function AdminWorklist({ onLogout }) {
                 </button>
                 {publishVehicleMutation.error && (
                   <span className="text-sm text-red-300">
-                    {publishVehicleMutation.error?.response?.data?.non_field_errors?.[0] || publishVehicleMutation.error?.response?.data?.starting_price?.[0] || 'Could not publish car.'}
+                    {publishErrorMessage}
                   </span>
                 )}
                 {publishedVehicle && <span className="text-sm font-semibold text-emerald-300">{publishedVehicle.brand_name} {publishedVehicle.name} is live.</span>}
@@ -313,6 +354,15 @@ export default function AdminWorklist({ onLogout }) {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            )}
+            {!isLoading && leads.length > 0 && leadPageCount > 1 && (
+              <div className="flex items-center justify-between border-t border-slate-800 px-4 py-3 text-sm text-slate-300">
+                <span>Page {leadPage} of {leadPageCount} ({leadCount} total leads)</span>
+                <div className="flex gap-2">
+                  <button type="button" disabled={leadPage === 1} onClick={() => setLeadPage((page) => page - 1)} className="rounded-md border border-slate-700 px-3 py-1.5 disabled:opacity-40">Previous</button>
+                  <button type="button" disabled={leadPage === leadPageCount} onClick={() => setLeadPage((page) => page + 1)} className="rounded-md border border-slate-700 px-3 py-1.5 disabled:opacity-40">Next</button>
+                </div>
               </div>
             )}
           </div>

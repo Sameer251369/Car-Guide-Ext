@@ -3,6 +3,7 @@ import { Pause, Play } from 'lucide-react';
 
 const HERO_POSTER = 'https://images.unsplash.com/photo-1560100820-c8de014ed221?auto=format&fit=crop&w=2200&q=84';
 const HERO_POSTER_ALT = 'Red performance coupe on a wet road at night, photographed by Wassim Chouak on Unsplash.';
+const HERO_VIDEO = `${import.meta.env.BASE_URL}hero/car-guide-hero.mp4`;
 
 const canUseVideo = () => {
   if (typeof window === 'undefined') return true;
@@ -86,7 +87,7 @@ export default function HeroMedia({ children }) {
         onError={() => setMediaState('failed')}
         aria-hidden="true"
       >
-        <source src="/hero/car-guide-hero.mp4" type="video/mp4" />
+        <source src={HERO_VIDEO} type="video/mp4" />
       </video>
       <div className="cg-hero-media__scrim" aria-hidden="true" />
       <span className="cg-hero-media__lane cg-hero-media__lane--white" aria-hidden="true" />
