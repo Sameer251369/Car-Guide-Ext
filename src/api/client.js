@@ -73,6 +73,14 @@ const resolveCsrfToken = async () => {
 };
 
 client.interceptors.request.use(async (config) => {
+  if (config.data instanceof FormData && config.headers) {
+    if (typeof config.headers.delete === 'function') {
+      config.headers.delete('Content-Type');
+    } else {
+      delete config.headers['Content-Type'];
+    }
+  }
+
   const method = (config.method || 'get').toLowerCase();
   if (['post', 'put', 'patch', 'delete'].includes(method)) {
     const csrfToken = await resolveCsrfToken();
