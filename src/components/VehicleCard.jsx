@@ -3,30 +3,86 @@ import { Link } from 'react-router-dom';
 import { Calculator, ChevronRight, Fuel, Gauge, Zap } from 'lucide-react';
 import { toAppMediaUrl } from '../api/client';
 
-export default function VehicleCard({ vehicle }) {
+const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?w=900';
+
+const handleImageError = (event) => {
+  event.currentTarget.onerror = null;
+  event.currentTarget.src = FALLBACK_IMAGE;
+};
+
+const formatPrice = (price) => {
+  const num = Number(price);
+  if (!num || Number.isNaN(num)) return null;
+  if (num >= 10000000) return `Rs. ${(num / 10000000).toFixed(2)} Crore`;
+  if (num >= 100000) return `Rs. ${(num / 100000).toFixed(2)} Lakh`;
+  return `Rs. ${num.toLocaleString('en-IN')}`;
+};
+
+export default function VehicleCard({ vehicle, variant = 'default' }) {
   const isEv = vehicle.ev_hybrid_cng_flag === 'EV' || String(vehicle.fuel_type).toLowerCase() === 'electric';
   const isTba = vehicle.is_tba || (!vehicle.starting_price && !vehicle.ex_showroom_price);
-
-  const formatPrice = (price) => {
-    const num = Number(price);
-    if (!num || Number.isNaN(num)) return null;
-    if (num >= 10000000) return `Rs. ${(num / 10000000).toFixed(2)} Crore`;
-    if (num >= 100000) return `Rs. ${(num / 100000).toFixed(2)} Lakh`;
-    return `Rs. ${num.toLocaleString('en-IN')}`;
-  };
-
   const startPrice = formatPrice(vehicle.starting_price || vehicle.ex_showroom_price);
   const topPrice = formatPrice(vehicle.top_variant_price);
   const hasRange = startPrice && topPrice && Number(vehicle.top_variant_price) > Number(vehicle.starting_price || vehicle.ex_showroom_price);
+  const imageUrl = toAppMediaUrl(vehicle.primary_image) || FALLBACK_IMAGE;
+  const vehicleName = `${vehicle.brand_name || 'Car'} ${vehicle.name || ''}`.trim();
+
+  if (variant === 'lineup') {
+    return (
+      <article className="cg-lineup-item">
+        <div className="cg-lineup-item__media">
+          <img src={imageUrl} alt={vehicleName} loading="lazy" onError={handleImageError} />
+        </div>
+        <div className="cg-lineup-item__content">
+          <div className="cg-lineup-item__heading">
+            <div>
+              <span className="cg-lineup-item__brand">{vehicle.brand_name || 'Brand TBA'}</span>
+              <h3><Link to={`/vehicles/${vehicle.slug}`}>{vehicle.name || 'Unnamed vehicle'}</Link></h3>
+              <p>{vehicle.body_type || 'Body type TBA'}</p>
+            </div>
+            {isEv && (
+              <span className="cg-lineup-item__ev">
+                <Zap aria-hidden="true" />
+                EV
+              </span>
+            )}
+          </div>
+
+          <div className="cg-lineup-item__specs">
+            <span><Fuel aria-hidden="true" />{vehicle.fuel_type || 'Fuel TBA'}</span>
+            <span><Gauge aria-hidden="true" />{vehicle.seats ? `${vehicle.seats} Seats` : vehicle.transmission || 'Specs TBA'}</span>
+          </div>
+
+          <div className="cg-lineup-item__footer">
+            <div className="cg-lineup-item__price">
+              <span>{isTba ? 'Status' : hasRange ? 'Ex-showroom price' : 'Starting price'}</span>
+              <strong>{isTba ? 'Price TBA' : hasRange ? `${startPrice} – ${topPrice}` : startPrice}</strong>
+            </div>
+            <div className="cg-lineup-item__actions">
+              <Link to={`/calculator?vehicle=${vehicle.id}`} className="cg-primary-action cg-primary-action--small">
+                <Calculator aria-hidden="true" />
+                <span>Price breakup</span>
+              </Link>
+              <Link to={`/vehicles/${vehicle.slug}`} className="cg-vehicle-detail-link" aria-label={`View ${vehicleName}`}>
+                <span>View car</span>
+                <ChevronRight aria-hidden="true" />
+              </Link>
+            </div>
+          </div>
+        </div>
+      </article>
+    );
+  }
 
   return (
     <article className="group flex h-full flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-red-200 hover:shadow-lg">
       <div className="relative aspect-[4/3] overflow-hidden bg-slate-100 p-3 sm:p-4">
         <img
-          src={toAppMediaUrl(vehicle.primary_image) || 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?w=900'}
-          alt={`${vehicle.brand_name} ${vehicle.name}`}
+          src={imageUrl}
+          alt={vehicleName}
           className="h-full w-full object-contain transition duration-500 group-hover:scale-[1.02]"
           loading="lazy"
+          onError={handleImageError}
         />
         <div className="absolute left-3 top-3 flex gap-2">
           <span className="rounded bg-white/95 px-2 py-1 text-[11px] font-bold uppercase text-slate-700 shadow-sm">
@@ -43,7 +99,7 @@ export default function VehicleCard({ vehicle }) {
 
       <div className="flex flex-1 flex-col p-4">
         <div className="flex-1">
-          <h3 className="line-clamp-1 text-base font-bold text-slate-950">{vehicle.brand_name} {vehicle.name}</h3>
+          <h3 className="line-clamp-1 text-base font-bold text-slate-950">{vehicleName}</h3>
           <p className="mt-1 text-sm font-semibold text-slate-500">{vehicle.body_type}</p>
 
           <div className="mt-4 grid grid-cols-2 gap-2 text-xs text-slate-600">
@@ -76,7 +132,7 @@ export default function VehicleCard({ vehicle }) {
             <Link
               to={`/vehicles/${vehicle.slug}`}
               className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-slate-200 text-slate-700 transition hover:border-red-200 hover:text-red-700"
-              aria-label={`View ${vehicle.name}`}
+              aria-label={`View ${vehicleName}`}
             >
               <ChevronRight className="h-4 w-4" />
             </Link>

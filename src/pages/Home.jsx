@@ -1,21 +1,43 @@
 import React, { useMemo, useState } from 'react';
+import { ArrowUpRight } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowRight, Calculator, Car, IndianRupee, Search, ShieldCheck } from 'lucide-react';
 import api from '../api/client';
-import BlogCard from '../components/BlogCard';
+import BudgetRail from '../components/BudgetRail';
+import EditorialDesk from '../components/EditorialDesk';
+import HeroMedia from '../components/HeroMedia';
+import PriceLedger from '../components/PriceLedger';
+import ProofRail from '../components/ProofRail';
+import SearchGantry from '../components/SearchGantry';
 import SEOHead from '../components/SEOHead';
 import VehicleCard from '../components/VehicleCard';
+
+const budgetLinks = {
+  under10: { label: '₹10–20 lakh', value: 'ten20' },
+  ten20: { label: 'Above ₹20 lakh', value: 'above20' },
+  above20: { label: 'Under ₹10 lakh', value: 'under10' },
+};
+
+const proofItems = [
+  { value: '301', label: 'car models' },
+  { value: '36', label: 'states & UTs' },
+  { value: 'Itemized', label: 'price breakup' },
+];
 
 export default function Home() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedBudget, setSelectedBudget] = useState('under10');
 
-  const { data: vehiclesData, isLoading } = useQuery({
+  const {
+    data: vehiclesData,
+    isLoading: vehiclesLoading,
+    isError: vehiclesError,
+    refetch: refetchVehicles,
+  } = useQuery({
     queryKey: ['home-vehicles', selectedBudget],
     queryFn: () => api.getVehicles({
-      page_size: 12,
+      page_size: 'all',
       ordering: selectedBudget === 'above20' ? '-starting_price' : 'starting_price',
     }),
   });
@@ -25,23 +47,25 @@ export default function Home() {
     queryFn: () => api.getArticles({ page_size: 3 }),
   });
 
-  const allVehicles = Array.isArray(vehiclesData?.results)
-    ? vehiclesData.results
-    : Array.isArray(vehiclesData)
-      ? vehiclesData
-      : [];
+  const allVehicles = useMemo(() => (
+    Array.isArray(vehiclesData?.results)
+      ? vehiclesData.results
+      : Array.isArray(vehiclesData)
+        ? vehiclesData
+        : []
+  ), [vehiclesData]);
 
   const vehicles = useMemo(() => {
     if (selectedBudget === 'under10') {
-      return allVehicles.filter((v) => Number(v.starting_price || v.ex_showroom_price) <= 1000000).slice(0, 8);
+      return allVehicles.filter((vehicle) => Number(vehicle.starting_price || vehicle.ex_showroom_price) <= 1000000).slice(0, 8);
     }
     if (selectedBudget === 'ten20') {
-      return allVehicles.filter((v) => {
-        const price = Number(v.starting_price || v.ex_showroom_price);
+      return allVehicles.filter((vehicle) => {
+        const price = Number(vehicle.starting_price || vehicle.ex_showroom_price);
         return price > 1000000 && price <= 2000000;
       }).slice(0, 8);
     }
-    return allVehicles.filter((v) => Number(v.starting_price || v.ex_showroom_price) > 2000000).slice(0, 8);
+    return allVehicles.filter((vehicle) => Number(vehicle.starting_price || vehicle.ex_showroom_price) > 2000000).slice(0, 8);
   }, [allVehicles, selectedBudget]);
 
   const articles = Array.isArray(articlesData?.results)
@@ -50,157 +74,117 @@ export default function Home() {
       ? articlesData
       : [];
 
-  const budgetTabs = [
-    { label: 'Cars Under 10 Lakh', value: 'under10' },
-    { label: '10 - 20 Lakh', value: 'ten20' },
-    { label: 'Premium Cars', value: 'above20' },
-  ];
-
   const handleSearch = (event) => {
     event.preventDefault();
-    const q = searchQuery.trim();
-    navigate(q ? `/vehicles?search=${encodeURIComponent(q)}` : '/vehicles');
+    const query = searchQuery.trim();
+    navigate(query ? `/vehicles?search=${encodeURIComponent(query)}` : '/vehicles');
   };
 
   return (
-    <>
+    <div className="cg-home">
       <SEOHead
-        title="Car Guide Media | New Cars, On Road Price & Reviews"
-        description="Explore new cars in India, compare prices, and calculate state-wise on-road price with Car Guide Media."
+        title="Find the Right Car | New Cars & On-Road Prices"
+        description="Search Indian car models, compare ex-showroom prices, and calculate state-wise on-road estimates with Car Guide Media."
       />
 
-      <section className="border-b border-slate-200 bg-white">
-        <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[1fr_420px] lg:px-8 lg:py-14">
-          <div className="flex flex-col justify-center">
-            <p className="mb-3 text-xs font-black uppercase tracking-[0.25em] text-red-600">New cars in India</p>
-            <h1 className="max-w-3xl text-4xl font-black tracking-tight text-slate-950 sm:text-5xl">
-              Find the right car and calculate its real on-road price.
-            </h1>
-            <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600">
-              Search 301 Indian car models, check ex-showroom ranges, and get state-wise price breakup across 36 states and union territories.
-            </p>
+      <section className="cg-hero" aria-labelledby="home-hero-title">
+        <HeroMedia>
+          <div className="cg-container cg-hero__content">
+            <div className="cg-hero__copy">
+              <p className="cg-operational-label">Indian car discovery / 2026 catalog</p>
+              <h1 id="home-hero-title">
+                <span>Find the right car.</span>
+                <span>Know its on-road price.</span>
+              </h1>
+              <p className="cg-hero__description">
+                Search 301 Indian car models, compare ex-showroom ranges, and open an itemized estimate for your state or union territory.
+              </p>
+            </div>
 
-            <form onSubmit={handleSearch} className="mt-8 max-w-2xl rounded-lg border border-slate-200 bg-white p-2 shadow-xl shadow-slate-200/70">
-              <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
-                <label className="relative block">
-                  <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
-                  <input
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search by brand or model, e.g. Nexon, Swift, Creta"
-                    className="h-12 w-full rounded-md border border-transparent bg-slate-50 pl-12 pr-4 text-sm font-semibold text-slate-950 outline-none focus:border-red-200 focus:bg-white"
-                  />
-                </label>
-                <button className="inline-flex h-12 items-center justify-center gap-2 rounded-md bg-red-600 px-6 text-sm font-black text-white transition hover:bg-red-700">
-                  Search
-                  <ArrowRight className="h-4 w-4" />
-                </button>
+            <div className="cg-hero__lower">
+              <SearchGantry value={searchQuery} onChange={setSearchQuery} onSubmit={handleSearch} />
+              <div className="cg-hero__links">
+                <Link to="/calculator" className="cg-text-link cg-text-link--light">
+                  <span>Calculate on-road price</span>
+                  <ArrowUpRight aria-hidden="true" />
+                </Link>
+                <Link to="/vehicles" className="cg-text-link cg-text-link--quiet">
+                  <span>Browse all cars</span>
+                  <ArrowUpRight aria-hidden="true" />
+                </Link>
               </div>
-            </form>
-
-            <div className="mt-6 flex flex-wrap gap-3 text-sm">
-              <Link to="/calculator" className="inline-flex items-center gap-2 rounded-md border border-red-200 bg-red-50 px-4 py-2 font-bold text-red-700">
-                <Calculator className="h-4 w-4" />
-                On-road price calculator
-              </Link>
-              <Link to="/vehicles" className="inline-flex items-center gap-2 rounded-md border border-slate-200 px-4 py-2 font-bold text-slate-700 hover:bg-slate-50">
-                <Car className="h-4 w-4" />
-                Explore all cars
-              </Link>
+              <ProofRail items={proofItems} />
             </div>
           </div>
-
-          <div className="overflow-hidden rounded-lg border border-slate-200 bg-slate-100">
-            <img
-              src="https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=1200&q=80"
-              alt="New car search"
-              className="h-full min-h-[320px] w-full object-cover"
-            />
-          </div>
-        </div>
+        </HeroMedia>
       </section>
 
-      <section className="border-b border-slate-200 bg-slate-50 py-8">
-        <div className="mx-auto grid max-w-7xl gap-4 px-4 sm:grid-cols-3 sm:px-6 lg:px-8">
-          {[
-            ['301', 'car models'],
-            ['36', 'states and UTs'],
-            ['Itemized', 'price breakup'],
-          ].map(([value, label]) => (
-            <div key={label} className="rounded-lg border border-slate-200 bg-white p-5">
-              <div className="text-3xl font-black text-slate-950">{value}</div>
-              <div className="mt-1 text-sm font-bold uppercase tracking-wide text-slate-500">{label}</div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="bg-white py-12">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <section className="cg-budget-section" aria-labelledby="budget-title">
+        <div className="cg-container">
+          <header className="cg-section-header cg-section-header--budget">
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.2em] text-red-600">Popular cars by budget</p>
-              <h2 className="mt-2 text-2xl font-black text-slate-950">Browse cars with price breakup</h2>
+              <p className="cg-operational-label">Starting grid</p>
+              <h2 id="budget-title">Cars in your budget, lined up</h2>
+              <p>Compare ex-showroom ranges at a glance, then open any car’s itemized on-road estimate.</p>
             </div>
-            <div className="flex gap-2 overflow-x-auto pb-1">
-              {budgetTabs.map((tab) => (
-                <button
-                  key={tab.value}
-                  onClick={() => setSelectedBudget(tab.value)}
-                  className={`shrink-0 rounded-md px-4 py-2 text-sm font-bold ${
-                    selectedBudget === tab.value ? 'bg-red-600 text-white' : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-          </div>
+          </header>
 
-          {isLoading ? (
-            <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-              {[1, 2, 3, 4].map((n) => <div key={n} className="h-80 animate-pulse rounded-lg bg-slate-100" />)}
-            </div>
-          ) : (
-            <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-              {vehicles.map((vehicle) => <VehicleCard key={vehicle.id} vehicle={vehicle} />)}
-            </div>
-          )}
-        </div>
-      </section>
+          <BudgetRail value={selectedBudget} onChange={setSelectedBudget} />
 
-      <section className="border-y border-slate-200 bg-slate-50 py-12">
-        <div className="mx-auto grid max-w-7xl gap-5 px-4 sm:grid-cols-3 sm:px-6 lg:px-8">
-          {[
-            [IndianRupee, 'More accurate calculator', 'Uses the statewise master price row and itemizes RTO fees, insurance, TCS, and finance charges.'],
-            [ShieldCheck, 'Transparent estimates', 'Every quote includes a disclaimer and state data note for client-safe usage.'],
-            [Car, 'Admin-published cars', 'Client-added cars become live in the frontend catalog and calculator immediately.'],
-          ].map(([Icon, title, text]) => (
-            <div key={title} className="rounded-lg border border-slate-200 bg-white p-6">
-              <Icon className="h-6 w-6 text-red-600" />
-              <h3 className="mt-4 text-lg font-black text-slate-950">{title}</h3>
-              <p className="mt-2 text-sm leading-6 text-slate-600">{text}</p>
-            </div>
-          ))}
-        </div>
-      </section>
+          <div
+            id="budget-results"
+            role="tabpanel"
+            aria-label="Cars in selected budget"
+            aria-live="polite"
+            aria-busy={vehiclesLoading}
+            className="cg-lineup-wrap"
+          >
+            {vehiclesLoading && (
+              <>
+                <span className="cg-sr-only">Loading cars…</span>
+                <div className="cg-lineup cg-lineup--loading" aria-hidden="true">
+                  {Array.from({ length: 8 }, (_, index) => <div className="cg-lineup-skeleton" key={index} />)}
+                </div>
+              </>
+            )}
 
-      {articles.length > 0 && (
-        <section className="bg-white py-12">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="mb-6 flex items-end justify-between">
-              <div>
-                <p className="text-xs font-black uppercase tracking-[0.2em] text-red-600">Reviews & news</p>
-                <h2 className="mt-2 text-2xl font-black text-slate-950">Latest articles</h2>
+            {!vehiclesLoading && vehiclesError && (
+              <div className="cg-lineup-state">
+                <h3>Cars couldn’t load.</h3>
+                <p>Try again or open the complete catalog.</p>
+                <div className="cg-lineup-state__actions">
+                  <button type="button" className="cg-primary-action cg-primary-action--compact" onClick={() => refetchVehicles()}>
+                    Try again
+                  </button>
+                  <Link to="/vehicles" className="cg-text-link">Browse all cars <ArrowUpRight aria-hidden="true" /></Link>
+                </div>
               </div>
-              <Link to="/blog" className="text-sm font-black text-red-600">View all</Link>
-            </div>
-            <div className="grid gap-5 md:grid-cols-3">
-              {articles.map((article) => <BlogCard key={article.id} article={article} />)}
-            </div>
+            )}
+
+            {!vehiclesLoading && !vehiclesError && vehicles.length === 0 && (
+              <div className="cg-lineup-state">
+                <h3>No cars are available in this budget yet.</h3>
+                <div className="cg-lineup-state__actions">
+                  <Link to="/vehicles" className="cg-primary-action cg-primary-action--compact">Browse all cars</Link>
+                  <button type="button" className="cg-text-link" onClick={() => setSelectedBudget(budgetLinks[selectedBudget].value)}>
+                    Try {budgetLinks[selectedBudget].label} <ArrowUpRight aria-hidden="true" />
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {!vehiclesLoading && !vehiclesError && vehicles.length > 0 && (
+              <div className="cg-lineup">
+                {vehicles.map((vehicle) => <VehicleCard key={vehicle.id} vehicle={vehicle} variant="lineup" />)}
+              </div>
+            )}
           </div>
-        </section>
-      )}
-    </>
+        </div>
+      </section>
+
+      <PriceLedger />
+
+      {articles.length > 0 && <EditorialDesk articles={articles} />}
+    </div>
   );
 }
