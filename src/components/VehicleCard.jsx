@@ -21,11 +21,11 @@ export default function VehicleCard({ vehicle }) {
 
   return (
     <article className="group flex h-full flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-red-200 hover:shadow-lg">
-      <div className="relative aspect-[16/10] bg-slate-100">
+      <div className="relative aspect-[4/3] overflow-hidden bg-slate-100 p-3 sm:p-4">
         <img
           src={toAppMediaUrl(vehicle.primary_image) || 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?w=900'}
           alt={`${vehicle.brand_name} ${vehicle.name}`}
-          className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
+          className="h-full w-full object-contain transition duration-500 group-hover:scale-[1.02]"
           loading="lazy"
         />
         <div className="absolute left-3 top-3 flex gap-2">
