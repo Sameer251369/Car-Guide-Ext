@@ -17,6 +17,8 @@ export default function AdminWorklist({ onLogout }) {
     top_variant_price: '',
     seats: '',
     transmission: 'Manual/Automatic',
+    description: '',
+    key_specs: '{"engine": "", "mileage": ""}',
     is_featured: false,
     is_tba: false,
     meta_description: '',
@@ -45,6 +47,8 @@ export default function AdminWorklist({ onLogout }) {
         top_variant_price: '',
         seats: '',
         transmission: 'Manual/Automatic',
+        description: '',
+        key_specs: '{"engine": "", "mileage": ""}',
         is_featured: false,
         is_tba: false,
         meta_description: '',
@@ -99,6 +103,9 @@ export default function AdminWorklist({ onLogout }) {
     payload.append('is_active', 'true');
     if (!vehicleForm.ex_showroom_price && vehicleForm.starting_price) {
       payload.append('ex_showroom_price', vehicleForm.starting_price);
+    }
+    if (vehicleForm.key_specs.trim()) {
+      payload.set('key_specs', vehicleForm.key_specs);
     }
     if (primaryImage) {
       payload.append('primary_image', primaryImage);
@@ -204,6 +211,30 @@ export default function AdminWorklist({ onLogout }) {
               </label>
 
               <label className="text-sm text-slate-300 lg:col-span-4">
+                <span className="mb-1.5 block">Vehicle description</span>
+                <textarea
+                  name="description"
+                  value={vehicleForm.description}
+                  onChange={handleVehicleField}
+                  rows={4}
+                  placeholder="Detailed description of the car for the vehicle page."
+                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none transition focus:border-amber-400"
+                />
+              </label>
+
+              <label className="text-sm text-slate-300 lg:col-span-2">
+                <span className="mb-1.5 block">Key specs (JSON)</span>
+                <textarea
+                  name="key_specs"
+                  value={vehicleForm.key_specs}
+                  onChange={handleVehicleField}
+                  rows={4}
+                  placeholder={'{"engine":"1.5L Turbo","mileage":"18 kmpl"}'}
+                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 font-mono text-sm text-white outline-none transition focus:border-amber-400"
+                />
+              </label>
+
+              <label className="text-sm text-slate-300 lg:col-span-2">
                 <span className="mb-1.5 block">Short description / SEO description</span>
                 <textarea
                   name="meta_description"

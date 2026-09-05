@@ -52,6 +52,12 @@ export default function VehicleDetail() {
   const validImages = validImagesPre;
   const selectedImageUrl = selectedImageUrlPre;
   const variants = vehicle.variants || [];
+  const imageTypeLabels = {
+    front: 'Front side',
+    exterior: 'Exterior / side',
+    interior: 'Interior',
+    rear: 'Backside / rear',
+  };
 
   const normalizeSpecEntries = (specMap = {}) => {
     const labelMap = {
@@ -151,9 +157,10 @@ export default function VehicleDetail() {
                         key={`${image.id || index}-${image.image_url}`}
                         type="button"
                         onClick={() => setSelectedImage(image.image_url)}
-                        className={`flex-shrink-0 w-24 h-16 rounded-xl border overflow-hidden transition-all ${selectedImageUrl === image.image_url ? 'border-amber-400 ring-2 ring-amber-500/30' : 'border-slate-700 hover:border-slate-500'}`}
+                        className={`relative flex-shrink-0 w-24 h-16 rounded-xl border overflow-hidden transition-all ${selectedImageUrl === image.image_url ? 'border-amber-400 ring-2 ring-amber-500/30' : 'border-slate-700 hover:border-slate-500'}`}
                       >
-                        <img src={image.image_url} alt={image.alt_text || `${vehicle.name} image ${index + 1}`} className="w-full h-full object-cover" />
+                        <img src={image.image_url} alt={image.alt_text || `${vehicle.name} ${imageTypeLabels[image.image_type] || `image ${index + 1}`}`} className="w-full h-full object-cover" />
+                        <span className="absolute inset-x-0 bottom-0 bg-slate-950/80 px-1 py-0.5 text-[9px] font-semibold text-white">{imageTypeLabels[image.image_type] || `Image ${index + 1}`}</span>
                       </button>
                     ))}
                   </div>
