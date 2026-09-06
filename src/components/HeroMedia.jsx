@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Pause, Play } from 'lucide-react';
 
-const HERO_POSTER = 'https://images.unsplash.com/photo-1560100820-c8de014ed221?auto=format&fit=crop&w=2200&q=84';
-const HERO_POSTER_ALT = 'Red performance coupe on a wet road at night, photographed by Wassim Chouak on Unsplash.';
+
+
 const HERO_VIDEO = `${import.meta.env.BASE_URL}hero/car-guide-hero.mp4`;
 
 const canUseVideo = () => {
