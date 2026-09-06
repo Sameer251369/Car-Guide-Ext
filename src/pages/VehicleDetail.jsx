@@ -20,8 +20,15 @@ export default function VehicleDetail() {
   const _images = Array.isArray(vehicle?.images) ? vehicle.images.filter(Boolean) : [];
   const validImagesPre = _images
     .filter((img) => img && img.image_url)
-    .map((img) => ({ ...img, image_url: toAppMediaUrl(img.image_url) }));
-  const primaryImgPre = validImagesPre.find((i) => i.is_primary)?.image_url || validImagesPre[0]?.image_url || 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800"><rect width="1200" height="800" fill="#0f172a"/><text x="600" y="420" text-anchor="middle" font-size="52" fill="#f8fafc" font-family="Arial">${(vehicle?.name || 'Vehicle').replace(/&/g, '&amp;')}</text></svg>`);
+    .map((img) => ({ ...img, image_url: toAppMediaUrl(img.image_url) }))
+    .sort((left, right) => {
+      const leftIsFront = left.image_type === 'front';
+      const rightIsFront = right.image_type === 'front';
+      if (leftIsFront !== rightIsFront) return leftIsFront ? -1 : 1;
+      if (left.is_primary !== right.is_primary) return left.is_primary ? -1 : 1;
+      return (left.display_order || 0) - (right.display_order || 0);
+    });
+  const primaryImgPre = validImagesPre[0]?.image_url || 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800"><rect width="1200" height="800" fill="#0f172a"/><text x="600" y="420" text-anchor="middle" font-size="52" fill="#f8fafc" font-family="Arial">${(vehicle?.name || 'Vehicle').replace(/&/g, '&amp;')}</text></svg>`);
   React.useEffect(() => {
     setSelectedImage(primaryImgPre);
   }, [slug, primaryImgPre]);
