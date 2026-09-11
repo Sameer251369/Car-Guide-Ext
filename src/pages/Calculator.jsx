@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import api from '../api/client';
@@ -24,6 +24,17 @@ export default function Calculator() {
   const [breakdownResult, setBreakdownResult] = useState(null);
   const [leadRefId, setLeadRefId] = useState(null);
   const [modalError, setModalError] = useState(null);
+
+  const breakdownRef = useRef(null);
+
+  useEffect(() => {
+    if (breakdownResult && breakdownRef.current) {
+      const timer = setTimeout(() => {
+        breakdownRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [breakdownResult]);
 
   // Remember verified lead in session to allow instant state comparison without repeated modal friction
   const [unlockedUser, setUnlockedUser] = useState(() => {
@@ -459,12 +470,14 @@ export default function Calculator() {
 
           {/* RESULTS BREAKDOWN */}
           {breakdownResult && (
-            <PriceBreakdownTable
-              breakdown={breakdownResult}
-              vehicleName={activeVehicle ? `${activeVehicle.brand_name || activeVehicle.brand?.name} ${activeVehicle.name}` : 'Selected Vehicle'}
-              variantName={variantLabel}
-              leadId={leadRefId}
-            />
+            <div ref={breakdownRef} className="scroll-mt-20">
+              <PriceBreakdownTable
+                breakdown={breakdownResult}
+                vehicleName={activeVehicle ? `${activeVehicle.brand_name || activeVehicle.brand?.name} ${activeVehicle.name}` : 'Selected Vehicle'}
+                variantName={variantLabel}
+                leadId={leadRefId}
+              />
+            </div>
           )}
 
         </div>
