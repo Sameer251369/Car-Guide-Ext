@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { BookOpen, Calculator, Car, Menu, Shield, UserCog, X } from 'lucide-react';
+import { BookOpen, Calculator, Car, Info, Menu, Shield, X } from 'lucide-react';
 import carGuideLogo from '../assets/Car Guide Media Logo Horizontal.png';
 
 export default function Navbar() {
@@ -11,7 +11,7 @@ export default function Navbar() {
     { name: 'New Cars', path: '/vehicles', icon: Car },
     { name: 'On Road Price', path: '/calculator', icon: Calculator, highlight: true },
     { name: 'Reviews & News', path: '/blog', icon: BookOpen },
-    { name: 'Admin Login', path: '/admin/login', icon: UserCog },
+    { name: 'About Us', path: '/about', icon: Info },
   ];
 
   const isActive = (path) => location.pathname.startsWith(path);

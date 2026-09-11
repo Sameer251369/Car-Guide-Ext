@@ -12,6 +12,7 @@ import VehicleDetail from './pages/VehicleDetail';
 import Blog from './pages/Blog';
 import ArticleDetail from './pages/ArticleDetail';
 import Calculator from './pages/Calculator';
+import About from './pages/About';
 import AdminLogin from './pages/AdminLogin';
 import AdminWorklist from './pages/AdminWorklist';
 
@@ -73,6 +74,7 @@ export default function App() {
           <Route path="/blog" element={<Blog />} />
           <Route path="/blog/:slug" element={<ArticleDetail />} />
           <Route path="/calculator" element={<Calculator />} />
+          <Route path="/about" element={<About />} />
           <Route path="/admin/login" element={<AdminLogin onAuthenticated={() => setIsAdmin(true)} />} />
           <Route
             path="/admin/worklist"
