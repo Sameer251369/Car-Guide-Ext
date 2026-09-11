@@ -36,10 +36,10 @@ export default function Calculator() {
     }
   }, [breakdownResult]);
 
-  // Remember verified lead in session to allow instant state comparison without repeated modal friction
+  // Remember verified lead in local and session storage so form opens only once for first calculation
   const [unlockedUser, setUnlockedUser] = useState(() => {
     try {
-      const saved = sessionStorage.getItem('carguide_lead_user');
+      const saved = localStorage.getItem('carguide_lead_user') || sessionStorage.getItem('carguide_lead_user');
       return saved ? JSON.parse(saved) : null;
     } catch {
       return null;
@@ -89,20 +89,29 @@ export default function Calculator() {
 
   const leadMutation = useMutation({
     mutationFn: (leadPayload) => api.submitLeadAndGetBreakdown(leadPayload),
-    onSuccess: (data) => {
+    onSuccess: (data, variables) => {
       setBreakdownResult(data.breakdown);
       setLeadRefId(data.lead_id);
       setIsGateOpen(false);
       setModalError(null);
+
+      // Lock user details so lead form never pops up continuously
+      if (variables?.name && variables?.phone_number) {
+        const userData = {
+          name: variables.name,
+          phone_number: variables.phone_number,
+          city: variables.city || '',
+        };
+        setUnlockedUser(userData);
+        try {
+          localStorage.setItem('carguide_lead_user', JSON.stringify(userData));
+          sessionStorage.setItem('carguide_lead_user', JSON.stringify(userData));
+        } catch {
+          // ignore storage failure
+        }
+      }
     },
     onError: (error) => {
-      setUnlockedUser(null);
-      try {
-        sessionStorage.removeItem('carguide_lead_user');
-      } catch {
-        // ignore storage failure
-      }
-      setIsGateOpen(true);
       const errorMsg = error?.response?.data?.error || 
                        error?.response?.data?.detail ||
                        error?.message ||
@@ -142,7 +151,7 @@ export default function Calculator() {
       return;
     }
 
-    // If user already submitted gate in this browser session, calculate directly
+    // If user already submitted gate, calculate directly without showing lead form again
     if (unlockedUser) {
       leadMutation.mutate({
         name: unlockedUser.name,
@@ -165,6 +174,14 @@ export default function Calculator() {
 
   const handleGateSubmit = ({ name, phone_number, city }) => {
     const userData = { name, phone_number, city };
+    setUnlockedUser(userData);
+    try {
+      localStorage.setItem('carguide_lead_user', JSON.stringify(userData));
+      sessionStorage.setItem('carguide_lead_user', JSON.stringify(userData));
+    } catch {
+      // ignore storage failure
+    }
+
     leadMutation.mutate({
       ...userData,
       vehicle_id: Number(selectedVehicleId),
