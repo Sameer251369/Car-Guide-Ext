@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { BookOpen, Calculator, Car, Menu, Shield, UserCog, X } from 'lucide-react';
+import carGuideLogo from '../assets/Car Guide Media Logo Horizontal.png';
 
 export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -19,14 +20,12 @@ export default function Navbar() {
     <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/95 backdrop-blur">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
-          <Link to="/" className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-600 text-white shadow-sm">
-              <Car className="h-5 w-5" />
-            </div>
-            <div className="leading-tight">
-              <span className="block text-lg font-black tracking-tight text-slate-950">Car Guide</span>
-              <span className="block text-[11px] font-bold uppercase tracking-[0.22em] text-red-600">Media</span>
-            </div>
+          <Link to="/" className="flex items-center">
+            <img
+              src={carGuideLogo}
+              alt="Car Guide Media"
+              className="h-10 w-auto max-w-[200px] object-contain"
+            />
           </Link>
 
           <nav className="hidden items-center gap-1 md:flex">
