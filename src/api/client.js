@@ -165,8 +165,28 @@ export const api = {
     return res.data;
   },
 
+  deleteAdminLead: async (id) => {
+    const res = await client.delete(`/admin/leads/${id}/`);
+    return res.data;
+  },
+
+  getAdminVehicles: async (params = {}) => {
+    const res = await client.get('/admin/vehicles/', { params });
+    return res.data;
+  },
+
   createAdminVehicle: async (payload) => {
     const res = await client.post('/admin/vehicles/', payload);
+    return res.data;
+  },
+
+  updateAdminVehicle: async (id, payload) => {
+    const res = await client.patch(`/admin/vehicles/${id}/`, payload);
+    return res.data;
+  },
+
+  deleteAdminVehicle: async (id) => {
+    const res = await client.delete(`/admin/vehicles/${id}/`);
     return res.data;
   },
 
