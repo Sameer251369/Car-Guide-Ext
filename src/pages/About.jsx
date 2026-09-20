@@ -154,7 +154,7 @@ export default function About() {
 
               <div className="pt-6 flex flex-wrap items-center justify-center gap-4">
                 <a
-                  href="https://youtube.com"
+                  href="https://www.youtube.com/@CarGuideMedia"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-red-600/30 transition hover:bg-red-700"
