@@ -39,9 +39,10 @@ export default function AdminWorklist({ onLogout }) {
 
   // --- CAR MANAGEMENT STATE ---
   const [carSearch, setCarSearch] = useState('');
-  const [carSourceFilter] = useState('manual');
+  const [carSourceFilter, setCarSourceFilter] = useState('all');
   const [editingVehicle, setEditingVehicle] = useState(null);
   const [editForm, setEditForm] = useState({});
+  const [editVariants, setEditVariants] = useState([]);
   const [editImages, setEditImages] = useState({
     primary_image: null,
     front_image: null,
@@ -174,8 +175,16 @@ export default function AdminWorklist({ onLogout }) {
       setEditingVehicle(null);
       queryClient.invalidateQueries({ queryKey: ['admin-vehicles-record'] });
       queryClient.invalidateQueries({ queryKey: ['vehicles-301'] });
+      queryClient.invalidateQueries({ queryKey: ['calculator-vehicles-master'] });
       queryClient.invalidateQueries({ queryKey: ['vehicle-facets'] });
-      showNotification('Car updated successfully!');
+      showNotification('Car and variants updated successfully!');
+    },
+    onError: (error) => {
+      const responseData = error?.response?.data;
+      const details = responseData && typeof responseData === 'object'
+        ? Object.values(responseData).flat().join(' ')
+        : '';
+      showNotification(details ? `Update failed: ${details}` : 'Car update failed. Please try again.');
     },
   });
 
@@ -271,6 +280,7 @@ export default function AdminWorklist({ onLogout }) {
   // --- EDIT MODAL HANDLERS ---
   const startEditingVehicle = (car) => {
     setEditingVehicle(car);
+    setEditVariants(car.variants ? car.variants.map((v) => ({ ...v })) : []);
     setEditForm({
       brand_name: car.brand_name || car.brand?.name || '',
       name: car.name || '',
@@ -301,12 +311,48 @@ export default function AdminWorklist({ onLogout }) {
 
   const handleEditField = (event) => {
     const { name, value, type, checked } = event.target;
+    if (name === 'starting_price' || name === 'ex_showroom_price') {
+      setEditForm((prev) => ({ ...prev, starting_price: value, ex_showroom_price: value }));
+      return;
+    }
     setEditForm((prev) => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
   };
 
   const handleEditImageChange = (event) => {
     const { name, files } = event.target;
     setEditImages((prev) => ({ ...prev, [name]: files?.[0] || null }));
+  };
+
+  const handleVariantChangeInEdit = (index, field, value) => {
+    setEditVariants((prev) => {
+      const next = [...prev];
+      next[index] = { ...next[index], [field]: value };
+      return next;
+    });
+  };
+
+  const handleAddVariantInEdit = () => {
+    setEditVariants((prev) => [
+      ...prev,
+      {
+        variant_name: '',
+        ex_showroom_price: editForm.starting_price || editForm.ex_showroom_price || '',
+        fuel_type: editForm.fuel_type || 'Petrol',
+        transmission: 'Manual',
+      },
+    ]);
+  };
+
+  const handleRemoveVariantInEdit = (index) => {
+    setEditVariants((prev) => {
+      const next = [...prev];
+      if (next[index].id) {
+        next[index] = { ...next[index], delete: true };
+      } else {
+        next.splice(index, 1);
+      }
+      return next;
+    });
   };
 
   const handleSaveVehicleEdit = (event) => {
@@ -323,6 +369,8 @@ export default function AdminWorklist({ onLogout }) {
     Object.entries(editImages).forEach(([key, file]) => {
       if (file) payload.append(key, file);
     });
+
+    payload.append('variants_json', JSON.stringify(editVariants));
 
     updateVehicleMutation.mutate({ id: editingVehicle.id, payload });
   };
@@ -1014,6 +1062,71 @@ export default function AdminWorklist({ onLogout }) {
                       className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:border-amber-400"
                     />
                   </div>
+                </div>
+              </div>
+
+              {/* Variants Section */}
+              <div className="rounded-2xl bg-slate-950 p-4 border border-slate-800 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-bold text-amber-300 flex items-center gap-1.5">
+                    <Tag size={16} /> Trim Variants &amp; Prices ({editVariants.filter(v => !v.delete).length})
+                  </h4>
+                  <button
+                    type="button"
+                    onClick={handleAddVariantInEdit}
+                    className="flex items-center gap-1 text-xs font-bold text-slate-950 bg-amber-400 hover:bg-amber-300 px-3 py-1.5 rounded-lg transition"
+                  >
+                    <Plus size={14} /> Add Variant
+                  </button>
+                </div>
+
+                <div className="space-y-3 max-h-60 overflow-y-auto pr-1">
+                  {editVariants.map((varItem, idx) => {
+                    if (varItem.delete) return null;
+                    return (
+                      <div key={varItem.id || `new-${idx}`} className="flex flex-wrap sm:flex-nowrap items-center gap-2 rounded-xl border border-slate-800 bg-slate-900 p-2.5">
+                        <input
+                          type="text"
+                          placeholder="Variant Name (e.g. LXi 1.2)"
+                          value={varItem.variant_name || ''}
+                          onChange={(e) => handleVariantChangeInEdit(idx, 'variant_name', e.target.value)}
+                          className="flex-1 min-w-[140px] rounded-lg border border-slate-700 bg-slate-950 px-2.5 py-1.5 text-xs text-white outline-none focus:border-amber-400"
+                        />
+                        <input
+                          type="number"
+                          placeholder="Ex-Showroom (₹)"
+                          value={varItem.ex_showroom_price || ''}
+                          onChange={(e) => handleVariantChangeInEdit(idx, 'ex_showroom_price', e.target.value)}
+                          className="w-28 rounded-lg border border-slate-700 bg-slate-950 px-2.5 py-1.5 text-xs text-white outline-none focus:border-amber-400"
+                        />
+                        <input
+                          type="text"
+                          placeholder="Fuel (Petrol/EV)"
+                          value={varItem.fuel_type || ''}
+                          onChange={(e) => handleVariantChangeInEdit(idx, 'fuel_type', e.target.value)}
+                          className="w-24 rounded-lg border border-slate-700 bg-slate-950 px-2.5 py-1.5 text-xs text-white outline-none focus:border-amber-400"
+                        />
+                        <input
+                          type="text"
+                          placeholder="Transmission"
+                          value={varItem.transmission || ''}
+                          onChange={(e) => handleVariantChangeInEdit(idx, 'transmission', e.target.value)}
+                          className="w-24 rounded-lg border border-slate-700 bg-slate-950 px-2.5 py-1.5 text-xs text-white outline-none focus:border-amber-400"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveVariantInEdit(idx)}
+                          className="p-1.5 text-red-400 hover:bg-red-500/10 rounded-lg transition"
+                          title="Remove Variant"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    );
+                  })}
+                  {editVariants.filter(v => !v.delete).length === 0 && (
+                    <p className="text-xs text-slate-500 italic text-center py-2">No variants created yet. Click "+ Add Variant" to add specific trims.</p>
+                  )}
                 </div>
               </div>
 

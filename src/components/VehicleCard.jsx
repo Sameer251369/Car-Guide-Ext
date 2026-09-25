@@ -29,11 +29,16 @@ export default function VehicleCard({ vehicle, variant = 'default' }) {
 
   if (variant === 'lineup') {
     return (
-      <article className="cg-lineup-item">
-        <div className="cg-lineup-item__media">
+      <article className="cg-lineup-item relative">
+        <Link
+          to={`/vehicles/${vehicle.slug}`}
+          className="absolute inset-0 z-0"
+          aria-label={`View ${vehicleName}`}
+        />
+        <div className="cg-lineup-item__media relative z-10 pointer-events-none">
           <img src={imageUrl} alt={vehicleName} loading="lazy" onError={handleImageError} />
         </div>
-        <div className="cg-lineup-item__content">
+        <div className="cg-lineup-item__content relative z-10 pointer-events-none">
           <div className="cg-lineup-item__heading">
             <div>
               <span className="cg-lineup-item__brand">{vehicle.brand_name || 'Brand TBA'}</span>
@@ -58,7 +63,7 @@ export default function VehicleCard({ vehicle, variant = 'default' }) {
               <span>{isTba ? 'Status' : hasRange ? 'Ex-showroom price' : 'Starting price'}</span>
               <strong>{isTba ? 'Price TBA' : hasRange ? `${startPrice} – ${topPrice}` : startPrice}</strong>
             </div>
-            <div className="cg-lineup-item__actions">
+            <div className="cg-lineup-item__actions relative z-10 pointer-events-auto">
               <Link to={`/calculator?vehicle=${vehicle.id}`} className="cg-primary-action cg-primary-action--small">
                 <Calculator aria-hidden="true" />
                 <span>Price breakup</span>
@@ -75,8 +80,13 @@ export default function VehicleCard({ vehicle, variant = 'default' }) {
   }
 
   return (
-    <article className="group flex h-full flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-red-200 hover:shadow-lg">
-      <div className="relative aspect-[4/3] overflow-hidden bg-slate-100 p-3 sm:p-4">
+    <article className="group relative flex h-full flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-red-200 hover:shadow-lg">
+      <Link
+        to={`/vehicles/${vehicle.slug}`}
+        className="absolute inset-0 z-0"
+        aria-label={`View ${vehicleName}`}
+      />
+      <div className="relative z-10 pointer-events-none aspect-[4/3] overflow-hidden bg-slate-100 p-3 sm:p-4">
         <img
           src={imageUrl}
           alt={vehicleName}
@@ -97,7 +107,7 @@ export default function VehicleCard({ vehicle, variant = 'default' }) {
         </div>
       </div>
 
-      <div className="flex flex-1 flex-col p-4">
+      <div className="relative z-10 pointer-events-none flex flex-1 flex-col p-4">
         <div className="flex-1">
           <h3 className="line-clamp-1 text-base font-bold text-slate-950">{vehicleName}</h3>
           <p className="mt-1 text-sm font-semibold text-slate-500">{vehicle.body_type}</p>
@@ -121,7 +131,7 @@ export default function VehicleCard({ vehicle, variant = 'default' }) {
           <div className="mt-1 min-h-7 text-lg font-black text-slate-950">
             {isTba ? 'Price TBA' : hasRange ? `${startPrice} - ${topPrice}` : startPrice}
           </div>
-          <div className="mt-4 grid grid-cols-[1fr_auto] gap-2">
+          <div className="relative z-10 pointer-events-auto mt-4 grid grid-cols-[1fr_auto] gap-2">
             <Link
               to={`/calculator?vehicle=${vehicle.id}`}
               className="inline-flex items-center justify-center gap-2 rounded-md bg-red-600 px-3 py-2 text-sm font-bold text-white transition hover:bg-red-700"
