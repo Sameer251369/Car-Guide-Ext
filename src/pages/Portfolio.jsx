@@ -1,25 +1,46 @@
-import React, { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import React, { useEffect, useRef, useState } from 'react';
+import { useLocation, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Car, ChevronLeft, ChevronRight, RefreshCw, Search } from 'lucide-react';
 import api from '../api/client';
 import SEOHead from '../components/SEOHead';
 import VehicleCard from '../components/VehicleCard';
 
+const listingStates = new Map();
+
 export default function Portfolio() {
+  const location = useLocation();
   const [searchParams] = useSearchParams();
-  const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
-  const [selectedBrand, setSelectedBrand] = useState('');
-  const [selectedBodyType, setSelectedBodyType] = useState('');
-  const [selectedFuelType, setSelectedFuelType] = useState('');
-  const [ordering, setOrdering] = useState('name');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(12);
+  const savedState = listingStates.get(location.key);
+  const [searchQuery, setSearchQuery] = useState(savedState?.searchQuery ?? searchParams.get('search') ?? '');
+  const [selectedBrand, setSelectedBrand] = useState(savedState?.selectedBrand ?? '');
+  const [selectedBodyType, setSelectedBodyType] = useState(savedState?.selectedBodyType ?? '');
+  const [selectedFuelType, setSelectedFuelType] = useState(savedState?.selectedFuelType ?? '');
+  const [ordering, setOrdering] = useState(savedState?.ordering ?? 'name');
+  const [currentPage, setCurrentPage] = useState(savedState?.currentPage ?? 1);
+  const [pageSize, setPageSize] = useState(savedState?.pageSize ?? 12);
+  const previousSearch = useRef(searchParams.toString());
 
   useEffect(() => {
-    setSearchQuery(searchParams.get('search') || '');
-    setCurrentPage(1);
+    const nextSearch = searchParams.toString();
+    if (nextSearch !== previousSearch.current) {
+      previousSearch.current = nextSearch;
+      setSearchQuery(searchParams.get('search') || '');
+      setCurrentPage(1);
+    }
   }, [searchParams]);
+
+  useEffect(() => {
+    listingStates.set(location.key, {
+      searchQuery,
+      selectedBrand,
+      selectedBodyType,
+      selectedFuelType,
+      ordering,
+      currentPage,
+      pageSize,
+    });
+  }, [location.key, searchQuery, selectedBrand, selectedBodyType, selectedFuelType, ordering, currentPage, pageSize]);
 
   const { data: facets } = useQuery({
     queryKey: ['vehicle-facets'],

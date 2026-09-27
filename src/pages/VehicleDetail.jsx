@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import api, { toAppMediaUrl } from '../api/client';
 import SEOHead from '../components/SEOHead';
@@ -7,7 +7,17 @@ import { Car, Calculator, Fuel, ShieldCheck, Zap, ArrowLeft, CheckCircle2, Chevr
 
 export default function VehicleDetail() {
   const { slug } = useParams();
+  const location = useLocation();
+  const navigate = useNavigate();
   const [selectedVariant, setSelectedVariant] = useState(null);
+
+  const handleBackToVehicles = () => {
+    if (location.state?.fromVehicles) {
+      navigate(-1);
+      return;
+    }
+    navigate('/vehicles');
+  };
 
   const { data: vehicle, isLoading, error } = useQuery({
     queryKey: ['vehicle', slug],
@@ -47,10 +57,10 @@ export default function VehicleDetail() {
     return (
       <div className="py-20 text-center text-slate-400 space-y-4">
         <h2 className="text-xl font-bold text-white">Vehicle Not Found</h2>
-        <Link to="/vehicles" className="inline-flex items-center space-x-2 text-amber-400 text-xs font-bold">
+        <button type="button" onClick={handleBackToVehicles} className="inline-flex items-center space-x-2 text-amber-400 text-xs font-bold">
           <ArrowLeft className="w-4 h-4" />
           <span>Back to Portfolio</span>
-        </Link>
+        </button>
       </div>
     );
   }
@@ -128,10 +138,10 @@ export default function VehicleDetail() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
           
           {/* Breadcrumb back */}
-          <Link to="/vehicles" className="inline-flex items-center space-x-2 text-xs font-semibold text-slate-400 hover:text-white transition-colors">
+          <button type="button" onClick={handleBackToVehicles} className="inline-flex items-center space-x-2 text-xs font-semibold text-slate-400 hover:text-white transition-colors">
             <ArrowLeft className="w-4 h-4" />
             <span>Back to Vehicles</span>
-          </Link>
+          </button>
 
           {/* Top Hero Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Calculator, ChevronRight, Fuel, Gauge, Zap } from 'lucide-react';
 import { toAppMediaUrl } from '../api/client';
 
@@ -19,6 +19,8 @@ const formatPrice = (price) => {
 };
 
 export default function VehicleCard({ vehicle, variant = 'default' }) {
+  const location = useLocation();
+  const detailNavigationState = location.pathname === '/vehicles' ? { fromVehicles: true } : undefined;
   const isEv = vehicle.ev_hybrid_cng_flag === 'EV' || String(vehicle.fuel_type).toLowerCase() === 'electric';
   const isTba = vehicle.is_tba || (!vehicle.starting_price && !vehicle.ex_showroom_price);
   const startPrice = formatPrice(vehicle.starting_price || vehicle.ex_showroom_price);
@@ -32,6 +34,7 @@ export default function VehicleCard({ vehicle, variant = 'default' }) {
       <article className="cg-lineup-item relative">
         <Link
           to={`/vehicles/${vehicle.slug}`}
+          state={detailNavigationState}
           className="absolute inset-0 z-0"
           aria-label={`View ${vehicleName}`}
         />
@@ -42,7 +45,7 @@ export default function VehicleCard({ vehicle, variant = 'default' }) {
           <div className="cg-lineup-item__heading">
             <div>
               <span className="cg-lineup-item__brand">{vehicle.brand_name || 'Brand TBA'}</span>
-              <h3><Link to={`/vehicles/${vehicle.slug}`}>{vehicle.name || 'Unnamed vehicle'}</Link></h3>
+              <h3><Link to={`/vehicles/${vehicle.slug}`} state={detailNavigationState}>{vehicle.name || 'Unnamed vehicle'}</Link></h3>
               <p>{vehicle.body_type || 'Body type TBA'}</p>
             </div>
             {isEv && (
@@ -68,7 +71,7 @@ export default function VehicleCard({ vehicle, variant = 'default' }) {
                 <Calculator aria-hidden="true" />
                 <span>Price breakup</span>
               </Link>
-              <Link to={`/vehicles/${vehicle.slug}`} className="cg-vehicle-detail-link" aria-label={`View ${vehicleName}`}>
+              <Link to={`/vehicles/${vehicle.slug}`} state={detailNavigationState} className="cg-vehicle-detail-link" aria-label={`View ${vehicleName}`}>
                 <span>View car</span>
                 <ChevronRight aria-hidden="true" />
               </Link>
@@ -83,6 +86,7 @@ export default function VehicleCard({ vehicle, variant = 'default' }) {
     <article className="group relative flex h-full flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-red-200 hover:shadow-lg">
       <Link
         to={`/vehicles/${vehicle.slug}`}
+        state={detailNavigationState}
         className="absolute inset-0 z-0"
         aria-label={`View ${vehicleName}`}
       />
@@ -141,6 +145,7 @@ export default function VehicleCard({ vehicle, variant = 'default' }) {
             </Link>
             <Link
               to={`/vehicles/${vehicle.slug}`}
+              state={detailNavigationState}
               className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-slate-200 text-slate-700 transition hover:border-red-200 hover:text-red-700"
               aria-label={`View ${vehicleName}`}
             >
