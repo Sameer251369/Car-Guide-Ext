@@ -11,6 +11,7 @@ import ProofRail from '../components/ProofRail';
 import SearchGantry from '../components/SearchGantry';
 import SEOHead from '../components/SEOHead';
 import VehicleCard from '../components/VehicleCard';
+import RotatingText from '../components/RotatingText';
 
 const budgetLinks = {
   under10: { label: '₹10–20 lakh', value: 'ten20' },
@@ -22,6 +23,12 @@ const proofItems = [
   { value: '301', label: 'car models' },
   { value: '36', label: 'states & UTs' },
   { value: 'Itemized', label: 'price breakup' },
+];
+
+const heroPhrases = [
+  'Search 301 Indian car models across every segment.',
+  'Compare ex-showroom price ranges in seconds.',
+  'Open an itemized on-road estimate for your state.',
 ];
 
 export default function Home() {
@@ -96,9 +103,7 @@ export default function Home() {
                 <span>Find the right car.</span>
                 <span>Know its on-road price.</span>
               </h1>
-              <p className="cg-hero__description">
-                Search 301 Indian car models, compare ex-showroom ranges, and open an itemized estimate for your state or union territory.
-              </p>
+              <RotatingText phrases={heroPhrases} interval={3000} className="cg-hero__description" />
             </div>
 
             <div className="cg-hero__lower">
