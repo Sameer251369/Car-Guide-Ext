@@ -36,13 +36,12 @@ export default function Navbar() {
                 <Link
                   key={item.path}
                   to={item.path}
-                  className={`inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold transition ${
-                    item.highlight
+                  className={`inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold transition ${item.highlight
                       ? 'bg-red-600 text-white hover:bg-red-700'
                       : active
-                      ? 'bg-slate-100 text-red-700'
-                      : 'text-slate-700 hover:bg-slate-100 hover:text-slate-950'
-                  }`}
+                        ? 'bg-slate-100 text-red-700'
+                        : 'text-slate-700 hover:bg-slate-100 hover:text-slate-950'
+                    }`}
                 >
                   <Icon className="h-4 w-4" />
                   <span>{item.name}</span>

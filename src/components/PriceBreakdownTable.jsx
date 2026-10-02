@@ -155,7 +155,9 @@ export default function PriceBreakdownTable({ breakdown, vehicleName, variantNam
             <tr>
               <td className="py-3.5 px-4 font-medium">2. State Lifetime Road Tax</td>
               <td className="py-3.5 px-4 text-xs text-slate-500">
-                {breakdown.road_tax_rate_percent}% slab rate ({breakdown.state_code} {breakdown.effective_fuel_type}, {breakdown.ownership_type})
+                {Number(breakdown.road_tax_rate_percent) === 0 && String(breakdown.effective_fuel_type).toLowerCase().includes('electric')
+                  ? `EV road-tax exemption (${breakdown.state_code})`
+                  : `${breakdown.road_tax_rate_percent}% slab rate (${breakdown.state_code} ${breakdown.effective_fuel_type}, ${breakdown.ownership_type})`}
               </td>
               <td className="py-3.5 px-4 text-right font-mono font-medium">{formatRupees(breakdown.road_tax)}</td>
               <td className="py-3.5 px-4 text-center">{renderBadge('gov')}</td>
