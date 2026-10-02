@@ -1,0 +1,174 @@
+/* ==========================================================
+   Car Guide: automotive layer for Home.jsx
+   Colours are sampled from your live site:
+     brand red  #dc2626   (same as the "Search cars" button)
+     dark navy  #020617
+   If you change your brand colours, edit the 3 tokens below.
+   ========================================================== */
+.cg-auto {
+  --auto-accent: #dc2626;      /* brand red */
+  --auto-accent-deep: #b91c1c; /* red, pressed/hover shade */
+  --auto-on-accent: #ffffff;   /* text on red */
+  --auto-light: #ffffff;       /* light text on the hero */
+
+  --auto-cut: 14px;            /* chamfer size */
+  --auto-ease: cubic-bezier(.2, .8, .2, 1);
+}
+
+/* ---------- Headline: sporty italic, clean left alignment ---------- */
+.cg-auto .cg-auto-title {
+  font-style: italic;
+  font-weight: 800;
+  letter-spacing: -.01em;
+  text-align: left;
+  text-wrap: balance;
+  hyphens: none;
+  overflow-wrap: normal;
+}
+.cg-auto .cg-auto-title span { display: block; }
+
+@media (max-width: 560px) {
+  .cg-auto .cg-auto-title {
+    font-size: clamp(1.95rem, 9.5vw, 2.6rem);
+    line-height: 1.08;
+  }
+}
+
+/* Small label: pit-lane marker */
+.cg-auto-label {
+  display: inline-flex; align-items: center; gap: .6rem;
+}
+.cg-auto-label::before {
+  content: '';
+  flex: none;
+  width: 28px; height: 3px;
+  background: var(--auto-accent);
+  transform: skewX(-30deg);
+}
+
+/* ---------- CTA pair ---------- */
+.cg-auto-ctas {
+  display: flex; flex-wrap: wrap; gap: 1rem 1.25rem;
+  margin-top: 1.4rem;
+}
+.cg-auto-telemetry { margin-top: 1.5rem; }
+
+.cg-cta {
+  position: relative;
+  display: inline-flex; align-items: center; gap: .85rem;
+  min-height: 3.5rem;
+  font-weight: 700;
+  letter-spacing: .01em;
+  line-height: 1.1;
+  text-decoration: none;
+  white-space: nowrap;
+  isolation: isolate;
+  transition: transform .25s var(--auto-ease), filter .25s var(--auto-ease), background-color .25s ease;
+}
+.cg-cta:active { transform: scale(.98); }
+.cg-cta:focus-visible { outline: 2px solid var(--auto-light); outline-offset: 4px; }
+.cg-cta svg { width: 1.15rem; height: 1.15rem; flex: none; }
+
+/* --- Primary: red "ignition" button --- */
+.cg-cta--primary {
+  padding: .45rem .45rem .45rem 1.25rem;
+  background: var(--auto-accent);
+  color: var(--auto-on-accent);
+  clip-path: polygon(
+    0 0,
+    calc(100% - var(--auto-cut)) 0,
+    100% var(--auto-cut),
+    100% 100%,
+    var(--auto-cut) 100%,
+    0 calc(100% - var(--auto-cut))
+  );
+  /* red glow sits outside the clipped shape via the wrapper filter */
+  filter: drop-shadow(0 8px 16px rgb(220 38 38 / .35));
+}
+.cg-cta--primary .cg-cta__lead { color: var(--auto-on-accent); }
+
+/* light streak that sweeps across on hover */
+.cg-cta--primary::before {
+  content: '';
+  position: absolute; top: 0; bottom: 0; left: -60%;
+  width: 40%;
+  background: linear-gradient(100deg, transparent, rgb(255 255 255 / .55), transparent);
+  transform: skewX(-22deg);
+  transition: left .7s var(--auto-ease);
+  z-index: -1;
+}
+.cg-cta--primary:hover {
+  background: var(--auto-accent-deep);
+  transform: translateY(-3px);
+  filter: drop-shadow(0 12px 22px rgb(220 38 38 / .55));
+}
+.cg-cta--primary:hover::before { left: 130%; }
+
+/* white chip with red arrow */
+.cg-cta__chip {
+  display: grid; place-items: center;
+  width: 2.6rem; height: 2.6rem;
+  background: var(--auto-on-accent);
+  color: var(--auto-accent);
+  clip-path: polygon(0 0, calc(100% - 9px) 0, 100% 9px, 100% 100%, 9px 100%, 0 calc(100% - 9px));
+  transition: transform .3s var(--auto-ease);
+}
+.cg-cta--primary:hover .cg-cta__chip { transform: translateX(3px); }
+.cg-cta--primary:hover .cg-cta__chip svg { animation: cg-launch .5s var(--auto-ease); }
+
+@keyframes cg-launch {
+  0%   { transform: translate(0, 0); opacity: 1; }
+  45%  { transform: translate(9px, -9px); opacity: 0; }
+  55%  { transform: translate(-9px, 9px); opacity: 0; }
+  100% { transform: translate(0, 0); opacity: 1; }
+}
+
+/* --- Ghost: HUD bracket button with glass fill --- */
+.cg-cta--ghost {
+  padding: 0 1.4rem;
+  color: var(--auto-light);
+  background: rgb(255 255 255 / .07);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border-inline: 2px solid var(--auto-accent);
+  transform: skewX(-10deg);
+}
+.cg-cta--ghost:hover { transform: skewX(-10deg) translateY(-3px); background: rgb(255 255 255 / .16); }
+.cg-cta--ghost:active { transform: skewX(-10deg) scale(.98); }
+.cg-cta--ghost > * { transform: skewX(10deg); }  /* keep text upright */
+
+.cg-cta--ghost::before,
+.cg-cta--ghost::after {
+  content: '';
+  position: absolute; left: 0; right: 0; height: 2px;
+  background: var(--auto-accent);
+  transform: scaleX(.25);
+  transition: transform .4s var(--auto-ease);
+}
+.cg-cta--ghost::before { top: 0;    transform-origin: left; }
+.cg-cta--ghost::after  { bottom: 0; transform-origin: right; }
+.cg-cta--ghost:hover::before,
+.cg-cta--ghost:hover::after { transform: scaleX(1); }
+
+.cg-cta--ghost .cg-cta__lead  { color: var(--auto-accent); }
+.cg-cta--ghost .cg-cta__arrow { transition: transform .3s var(--auto-ease); }
+.cg-cta--ghost:hover .cg-cta__arrow { transform: skewX(10deg) translate(3px, -3px); }
+
+/* ---------- Budget section ---------- */
+.cg-auto-budget .cg-section-header h2 { font-style: italic; font-weight: 800; }
+
+/* ---------- Mobile: both buttons full width, identical layout ---------- */
+@media (max-width: 560px) {
+  .cg-auto-ctas { flex-direction: column; align-items: stretch; gap: .85rem; }
+  .cg-cta { width: 100%; justify-content: space-between; }
+  .cg-cta__text { flex: 1; text-align: left; }
+  .cg-cta--ghost { padding: 0 1.25rem; }
+}
+
+/* ---------- Reduced motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .cg-cta, .cg-cta *, .cg-cta::before, .cg-cta::after {
+    transition: none !important;
+    animation: none !important;
+  }
+}

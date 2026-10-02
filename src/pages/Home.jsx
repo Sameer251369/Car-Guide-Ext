@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { ArrowUpRight } from 'lucide-react';
+import { ArrowUpRight, Calculator, CarFront } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import api from '../api/client';
@@ -12,6 +12,7 @@ import SearchGantry from '../components/SearchGantry';
 import SEOHead from '../components/SEOHead';
 import VehicleCard from '../components/VehicleCard';
 import RotatingText from '../components/RotatingText';
+import './home-automotive.css';
 
 const budgetLinks = {
   under10: { label: '₹10–20 lakh', value: 'ten20' },
@@ -88,7 +89,7 @@ export default function Home() {
   };
 
   return (
-    <div className="cg-home">
+    <div className="cg-home cg-auto">
       <SEOHead
         title="Find the Right Car | New Cars & On-Road Prices"
         description="Search Indian car models, compare ex-showroom prices, and calculate state-wise on-road estimates with Car Guide Media."
@@ -96,39 +97,48 @@ export default function Home() {
 
       <section className="cg-hero" aria-labelledby="home-hero-title">
         <HeroMedia>
-          <div className="cg-container cg-hero__content">
+          <div className="cg-container cg-hero__content cg-auto-hero">
             <div className="cg-hero__copy">
-              <p className="cg-operational-label">Indian car discovery / 2026 catalog</p>
-              <h1 id="home-hero-title">
+              <p className="cg-operational-label cg-auto-label">Indian car discovery / 2026 catalog</p>
+              <h1 id="home-hero-title" className="cg-auto-title">
                 <span>Find the right car.</span>
-                <span>Know its on-road price.</span>
+                <span>Know its on‑road price.</span>
               </h1>
               <RotatingText phrases={heroPhrases} interval={3000} className="cg-hero__description" />
             </div>
 
             <div className="cg-hero__lower">
               <SearchGantry value={searchQuery} onChange={setSearchQuery} onSubmit={handleSearch} />
-              <div className="cg-hero__links">
-                <Link to="/calculator" className="cg-text-link cg-text-link--light">
-                  <span>Calculate on-road price</span>
-                  <ArrowUpRight aria-hidden="true" />
+
+              <div className="cg-auto-ctas">
+                <Link to="/calculator" className="cg-cta cg-cta--primary">
+                  <Calculator className="cg-cta__lead" aria-hidden="true" />
+                  <span className="cg-cta__text">Calculate on-road price</span>
+                  <span className="cg-cta__chip" aria-hidden="true">
+                    <ArrowUpRight />
+                  </span>
                 </Link>
-                <Link to="/vehicles" className="cg-text-link cg-text-link--quiet">
-                  <span>Browse all cars</span>
-                  <ArrowUpRight aria-hidden="true" />
+
+                <Link to="/vehicles" className="cg-cta cg-cta--ghost">
+                  <CarFront className="cg-cta__lead" aria-hidden="true" />
+                  <span className="cg-cta__text">Browse all cars</span>
+                  <ArrowUpRight className="cg-cta__arrow" aria-hidden="true" />
                 </Link>
               </div>
-              <ProofRail items={proofItems} />
+
+              <div className="cg-auto-telemetry">
+                <ProofRail items={proofItems} />
+              </div>
             </div>
           </div>
         </HeroMedia>
       </section>
 
-      <section className="cg-budget-section" aria-labelledby="budget-title">
+      <section className="cg-budget-section cg-auto-budget" aria-labelledby="budget-title">
         <div className="cg-container">
           <header className="cg-section-header cg-section-header--budget">
             <div>
-              <p className="cg-operational-label">Starting grid</p>
+              <p className="cg-operational-label cg-auto-label">Starting grid</p>
               <h2 id="budget-title">Cars in your budget, lined up</h2>
               <p>Compare ex-showroom ranges at a glance, then open any car’s itemized on-road estimate.</p>
             </div>

@@ -6,7 +6,79 @@ import SEOHead from '../components/SEOHead';
 import LeadGateModal from '../components/LeadGateModal';
 import PriceBreakdownTable from '../components/PriceBreakdownTable';
 import CarBackgroundSlideshow from '../components/CarBackgroundSlideshow';
-import { Calculator as CalcIcon, ArrowRight, Sparkles, Sliders, Car, Fuel, Tag, Shield, Check, Layers, Zap } from 'lucide-react';
+import {
+  Calculator as CalcIcon, ArrowUpRight, Sparkles, Sliders, Car, Fuel, Tag,
+  Shield, Check, Layers, Zap, ChevronDown,
+} from 'lucide-react';
+
+/* Cut-corner shapes (same language as the other pages) */
+const CUT_LG = '[clip-path:polygon(0_0,calc(100%_-_16px)_0,100%_16px,100%_100%,16px_100%,0_calc(100%_-_16px))]';
+const CUT_SM = '[clip-path:polygon(0_0,calc(100%_-_8px)_0,100%_8px,100%_100%,8px_100%,0_calc(100%_-_8px))]';
+
+/* ---------- Small presentational helpers ---------- */
+function StepHeader({ number, title, right }) {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex items-center gap-3">
+        <span className="grid h-9 w-9 -skew-x-12 place-items-center bg-red-600 text-sm font-black text-white shadow-lg shadow-red-600/30">
+          <span className="inline-block skew-x-12">{number}</span>
+        </span>
+        <h2 className="text-base sm:text-lg font-black italic tracking-tight text-slate-950">{title}</h2>
+      </div>
+      {right}
+    </div>
+  );
+}
+
+function FieldLabel({ icon: Icon, children }) {
+  return (
+    <span className="mb-2 flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-slate-500">
+      {Icon && <Icon className="h-3.5 w-3.5 text-red-600" />}
+      <span>{children}</span>
+    </span>
+  );
+}
+
+function SelectBox({ value, onChange, disabled, children, large }) {
+  return (
+    <span className="group relative block">
+      <select
+        value={value}
+        onChange={onChange}
+        disabled={disabled}
+        className={`w-full cursor-pointer appearance-none rounded-xl border border-slate-200 bg-white pl-4 pr-10 text-sm font-bold text-slate-950 shadow-sm outline-none transition-all duration-200 hover:border-red-300 focus:border-red-500 focus:ring-4 focus:ring-red-600/10 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:opacity-60 ${large ? 'h-14' : 'h-12'}`}
+      >
+        {children}
+      </select>
+      <ChevronDown className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 transition-transform duration-200 group-focus-within:rotate-180 group-focus-within:text-red-600" />
+    </span>
+  );
+}
+
+function Segmented({ options, value, onSelect }) {
+  return (
+    <div className="grid grid-cols-2 gap-1.5 rounded-xl border border-slate-200 bg-slate-100 p-1.5">
+      {options.map((opt) => {
+        const active = value === opt.value;
+        return (
+          <button
+            key={String(opt.value)}
+            type="button"
+            onClick={() => onSelect(opt.value)}
+            aria-pressed={active}
+            className={`h-10 cursor-pointer rounded-lg px-3 text-xs font-extrabold transition-all duration-200 ${
+              active
+                ? 'bg-red-600 text-white shadow-md shadow-red-600/30'
+                : 'text-slate-600 hover:bg-white hover:text-red-600'
+            }`}
+          >
+            {opt.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
 export default function Calculator() {
   const [searchParams] = useSearchParams();
@@ -475,6 +547,12 @@ export default function Calculator() {
     ? 'Top Variant'
     : 'Starting Variant';
 
+  /* Shared handler for the Individual/Corporate and Cash/Loan toggles (same behaviour as before) */
+  const recalcOrReset = () => {
+    if (unlockedUser && breakdownResult) executeCalculation();
+    else setBreakdownResult(null);
+  };
+
   return (
     <CarBackgroundSlideshow>
       <SEOHead
@@ -484,68 +562,60 @@ export default function Calculator() {
 
       <div className="py-10 sm:py-16 min-h-screen">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-          {/* HEADER */}
-          <div className="text-center space-y-3">
-            <div className="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full text-xs font-semibold bg-red-50 text-red-700 border border-red-200 shadow-sm">
-              <CalcIcon className="w-4 h-4 text-red-600" />
-              <span>Hierarchical 2026 Catalog • Brand → Model → Fuel → Variant</span>
+
+          {/* ---------- HEADER ---------- */}
+          <div className="text-center space-y-4">
+            <div className="inline-flex items-center gap-2 -skew-x-12 bg-red-600 px-5 py-2 text-[11px] font-extrabold uppercase tracking-wider text-white shadow-lg shadow-red-600/30">
+              <span className="inline-flex skew-x-12 items-center gap-2">
+                <CalcIcon className="h-4 w-4" />
+                <span>2026 catalog · Brand → Model → Fuel → Variant</span>
+              </span>
             </div>
-            <h1 className="text-3xl sm:text-5xl font-black text-slate-950 tracking-tight">
-              Car On-Road Price Calculator
+            <h1 className="text-4xl sm:text-6xl font-black italic tracking-tight text-slate-950 leading-[1.05]">
+              Car on-road price calculator
             </h1>
-            <p className="text-xs sm:text-sm text-slate-600 max-w-xl mx-auto font-medium">
+            <p className="text-xs sm:text-sm text-slate-600 max-w-xl mx-auto font-semibold leading-relaxed">
               Select your vehicle brand, car model, fuel type, and exact variant trim level to generate precise state-wise on-road price breakdowns across India.
             </p>
           </div>
 
-          {/* MAIN FORM CONTAINER */}
-          <div className="rounded-xl bg-white border border-slate-200/80 p-6 sm:p-8 space-y-8 shadow-2xl shadow-slate-300/40">
-            {/* STEP 1: CASCADING CAR SELECTION (BRAND -> MODEL) */}
-            <div className="space-y-5">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2.5 text-sm font-bold text-slate-950">
-                  <div className="w-7 h-7 rounded-full bg-red-600 text-white flex items-center justify-center text-xs font-bold font-mono">
-                    1
-                  </div>
-                  <span>Select Car Brand &amp; Model</span>
-                </div>
-                <span className="text-[11px] font-mono text-red-700 bg-red-50 px-2.5 py-1 rounded-full border border-red-200">
-                  {vehiclesOfBrand.length} Models for Selected Brand
-                </span>
-              </div>
+          {/* ---------- MAIN FORM ---------- */}
+          <div className="relative overflow-hidden rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 space-y-8 shadow-[0_30px_60px_-25px_rgba(15,23,42,0.35)]">
+            {/* racing stripe along the top */}
+            <div aria-hidden="true" className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-red-700 via-red-600 to-red-400" />
+            <div aria-hidden="true" className="pointer-events-none absolute -right-16 top-0 h-48 w-48 -skew-x-12 bg-gradient-to-bl from-red-600/10 to-transparent" />
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* 1A: BRAND DROPDOWN */}
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center space-x-1.5">
-                    <Car className="w-3.5 h-3.5 text-red-600" />
-                    <span>1. Car Brand *</span>
-                  </label>
-                  <select
-                    value={selectedBrandId}
-                    onChange={handleBrandChange}
-                    className="w-full px-4 py-3 rounded-lg bg-white border border-slate-200 text-slate-950 text-xs sm:text-sm font-bold focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100 transition-all cursor-pointer shadow-sm"
-                  >
+            {/* STEP 1 */}
+            <div className="relative space-y-5">
+              <StepHeader
+                number="1"
+                title="Select car brand & model"
+                right={(
+                  <span className="rounded-full border border-red-200 bg-red-50 px-3 py-1 text-[11px] font-extrabold text-red-700">
+                    {vehiclesOfBrand.length} models for selected brand
+                  </span>
+                )}
+              />
+
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <label className="block">
+                  <FieldLabel icon={Car}>Car brand *</FieldLabel>
+                  <SelectBox value={selectedBrandId} onChange={handleBrandChange}>
                     <option value="">-- Choose Brand --</option>
                     {brands.map((b) => (
                       <option key={b.id} value={b.id}>
                         {b.name} ({b.vehicle_count || 0} Models)
                       </option>
                     ))}
-                  </select>
-                </div>
+                  </SelectBox>
+                </label>
 
-                {/* 1B: MODEL DROPDOWN */}
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center space-x-1.5">
-                    <Layers className="w-3.5 h-3.5 text-red-600" />
-                    <span>2. Car Model *</span>
-                  </label>
-                  <select
+                <label className="block">
+                  <FieldLabel icon={Layers}>Car model *</FieldLabel>
+                  <SelectBox
                     value={selectedVehicleId}
                     onChange={handleVehicleChange}
                     disabled={!selectedBrandId || vehiclesOfBrand.length === 0}
-                    className="w-full px-4 py-3 rounded-lg bg-white border border-slate-200 text-slate-950 text-xs sm:text-sm font-bold focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100 disabled:bg-slate-50 disabled:opacity-60 transition-all cursor-pointer shadow-sm"
                   >
                     <option value="">-- Choose Car Model --</option>
                     {vehiclesOfBrand.map((v) => (
@@ -553,29 +623,37 @@ export default function Calculator() {
                         {v.name} {v.is_tba ? '(Price TBA)' : `(From ${formatPriceOption(v.starting_price || v.ex_showroom_price)})`}
                       </option>
                     ))}
-                  </select>
-                </div>
+                  </SelectBox>
+                </label>
               </div>
 
-              {/* ACTIVE CAR HIGHLIGHT BADGE */}
+              {/* Active car banner */}
               {activeVehicle && (
-                <div className={`p-4 rounded-xl border ${activeVehicle.is_tba ? 'bg-amber-50 border-amber-200 text-amber-900' : 'bg-slate-50 border-slate-200 text-slate-700'} flex items-start justify-between gap-4 text-xs transition-all`}>
+                <div
+                  className={`relative flex flex-wrap items-center justify-between gap-4 overflow-hidden rounded-2xl border border-l-4 p-4 sm:p-5 transition-all ${
+                    activeVehicle.is_tba
+                      ? 'border-amber-200 border-l-amber-500 bg-amber-50'
+                      : 'border-slate-200 border-l-red-600 bg-gradient-to-r from-rose-50/70 to-white'
+                  }`}
+                >
                   <div>
-                    <div className="flex items-center space-x-2 font-black text-slate-950 text-base">
+                    <div className="flex items-center gap-2 text-lg font-black italic tracking-tight text-slate-950">
                       <span>{activeVehicle.brand_name || activeVehicle.brand?.name} {activeVehicle.name}</span>
                       {activeVehicle.is_tba && (
-                        <span className="px-2 py-0.5 rounded text-[10px] bg-amber-500 text-slate-950 font-bold uppercase">Price TBA</span>
+                        <span className="rounded bg-amber-500 px-2 py-0.5 text-[10px] font-extrabold uppercase not-italic text-slate-950">Price TBA</span>
                       )}
                     </div>
-                    <p className="text-xs text-slate-500 mt-1">
-                      Body Type: <strong className="text-slate-800 font-semibold">{activeVehicle.body_type}</strong> • Transmission: <strong className="text-slate-800 font-semibold">{activeVehicle.transmission}</strong>
+                    <p className="mt-1 text-xs text-slate-500">
+                      Body type: <strong className="font-bold text-slate-800">{activeVehicle.body_type}</strong>
+                      <span className="mx-1.5 text-slate-300">/</span>
+                      Transmission: <strong className="font-bold text-slate-800">{activeVehicle.transmission}</strong>
                     </p>
                   </div>
 
                   {!activeVehicle.is_tba && (
-                    <div className="text-right">
-                      <span className="text-[10px] text-slate-400 uppercase font-bold block">Ex-Showroom Range</span>
-                      <span className="font-mono font-black text-red-600 text-sm">
+                    <div className="text-left sm:text-right">
+                      <span className="block text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Ex-showroom range</span>
+                      <span className="text-base font-black text-red-600 tabular-nums">
                         {formatPriceOption(activeVehicle.starting_price || activeVehicle.ex_showroom_price)} – {formatPriceOption(activeVehicle.top_variant_price)}
                       </span>
                     </div>
@@ -584,38 +662,31 @@ export default function Calculator() {
               )}
             </div>
 
-            {/* STEP 2: FUEL TYPE & VARIANT SELECTION */}
+            {/* STEP 2 */}
             {activeVehicle && !activeVehicle.is_tba && (
-              <div className="space-y-5 pt-6 border-t border-slate-200">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2.5 text-sm font-bold text-slate-950">
-                    <div className="w-7 h-7 rounded-full bg-red-600 text-white flex items-center justify-center text-xs font-bold font-mono">
-                      2
-                    </div>
-                    <span>Select Fuel Type &amp; Trim Variant</span>
-                  </div>
-                  {!activeVehicle?.is_tba && (
+              <div className="relative space-y-5 border-t border-slate-100 pt-7">
+                <StepHeader
+                  number="2"
+                  title="Select fuel type & trim variant"
+                  right={!activeVehicle?.is_tba && (
                     <button
                       type="button"
                       onClick={() => {
                         setUseCustomPrice(!useCustomPrice);
                         setBreakdownResult(null);
                       }}
-                      className="text-xs font-bold text-red-600 hover:text-red-700 hover:underline flex items-center space-x-1 transition-colors"
+                      className="group inline-flex items-center gap-1.5 rounded-full border border-red-200 bg-red-50 px-3.5 py-1.5 text-xs font-extrabold text-red-700 transition-all hover:border-red-600 hover:bg-red-600 hover:text-white"
                     >
-                      <Sliders className="w-3.5 h-3.5" />
-                      <span>{useCustomPrice ? 'Choose Trim Variant' : 'Enter Custom Price'}</span>
+                      <Sliders className="h-3.5 w-3.5 transition-transform duration-300 group-hover:rotate-90" />
+                      <span>{useCustomPrice ? 'Choose trim variant' : 'Enter custom price'}</span>
                     </button>
                   )}
-                </div>
+                />
 
-                {/* 2A: FUEL TYPE PILLS (ALL FUELS, PETROL, DIESEL, CNG, ELECTRIC, HYBRID) */}
+                {/* Fuel pills */}
                 {availableFuelTypes.length > 0 && (
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-2 flex items-center space-x-1.5">
-                      <Fuel className="w-3.5 h-3.5 text-red-600" />
-                      <span>3. Powertrain / Fuel Type Filter</span>
-                    </label>
+                    <FieldLabel icon={Fuel}>Powertrain / fuel type</FieldLabel>
                     <div className="flex flex-wrap gap-2">
                       {availableFuelTypes.map((fuel) => {
                         const isSelected = selectedFuelType?.toLowerCase() === fuel.toLowerCase();
@@ -625,16 +696,17 @@ export default function Calculator() {
                             key={fuel}
                             type="button"
                             onClick={() => handleFuelChange(fuel)}
-                            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all border flex items-center space-x-1.5 cursor-pointer ${
+                            aria-pressed={isSelected}
+                            className={`inline-flex h-10 cursor-pointer items-center gap-1.5 rounded-xl border px-4 text-xs font-extrabold transition-all duration-200 hover:-translate-y-0.5 ${
                               isSelected
-                                ? 'bg-red-600 text-white border-red-600 shadow-md shadow-red-200'
+                                ? 'border-red-600 bg-red-600 text-white shadow-lg shadow-red-600/25'
                                 : isElectric
-                                ? 'bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100'
-                                : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100 hover:text-slate-950'
+                                ? 'border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                                : 'border-slate-200 bg-slate-50 text-slate-700 hover:border-red-300 hover:bg-red-50 hover:text-red-700'
                             }`}
                           >
-                            {isSelected && <Check className="w-3.5 h-3.5 text-white" />}
-                            {isElectric && !isSelected && <Zap className="w-3.5 h-3.5 text-emerald-600" />}
+                            {isSelected && <Check className="h-3.5 w-3.5" />}
+                            {isElectric && !isSelected && <Zap className="h-3.5 w-3.5 text-emerald-600" />}
                             <span>{fuel}</span>
                           </button>
                         );
@@ -643,32 +715,34 @@ export default function Calculator() {
                   </div>
                 )}
 
-                {/* 2B: VARIANT DROPDOWN OR CUSTOM PRICE */}
+                {/* Variant or custom price */}
                 {!useCustomPrice ? (
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center space-x-1.5">
-                      <Tag className="w-3.5 h-3.5 text-red-600" />
-                      <span>4. Select Variant (S, V, VX, ZXi, Corporate, Trim Level) *</span>
+                    <label className="block">
+                      <FieldLabel icon={Tag}>Select variant (S, V, VX, ZXi, corporate, trim level) *</FieldLabel>
+                      <SelectBox value={selectedVariantId} onChange={handleVariantChange} large>
+                        {displayVariants.map((varItem) => (
+                          <option key={varItem.id} value={varItem.id}>
+                            {varItem.variant_name} ({varItem.fuel_type || 'Petrol'}, {varItem.transmission}) — Ex-Showroom: {formatPriceOption(varItem.ex_showroom_price)}
+                          </option>
+                        ))}
+                      </SelectBox>
                     </label>
-                    <select
-                      value={selectedVariantId}
-                      onChange={handleVariantChange}
-                      className="w-full px-4 py-3.5 rounded-lg bg-white border border-slate-300 text-slate-950 text-xs sm:text-sm font-bold focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100 transition-all cursor-pointer shadow-sm"
-                    >
-                      {displayVariants.map((varItem) => (
-                        <option key={varItem.id} value={varItem.id}>
-                          {varItem.variant_name} ({varItem.fuel_type || 'Petrol'}, {varItem.transmission}) — Ex-Showroom: {formatPriceOption(varItem.ex_showroom_price)}
-                        </option>
-                      ))}
-                    </select>
 
                     {activeVariant && (
-                      <div className="mt-3 p-3.5 rounded-xl bg-red-50/80 border border-red-200 flex items-center justify-between text-xs text-red-950 font-medium shadow-sm">
-                        <div className="flex items-center space-x-2">
-                          <Check className="w-4 h-4 text-red-600 shrink-0" />
-                          <span>Selected Variant: <strong className="font-extrabold text-slate-950 text-sm">{activeVariant.variant_name}</strong> ({activeVariant.fuel_type || 'Petrol'}, {activeVariant.transmission})</span>
+                      <div className={`relative mt-4 flex flex-wrap items-center justify-between gap-3 overflow-hidden bg-gradient-to-br from-red-600 to-red-700 p-4 sm:p-5 text-white ${CUT_LG}`}>
+                        <div aria-hidden="true" className="absolute -right-6 -top-6 h-24 w-24 rotate-12 bg-white/10" />
+                        <div className="relative flex items-center gap-3">
+                          <span className="grid h-8 w-8 flex-none place-items-center rounded-full bg-white text-red-600">
+                            <Check className="h-4 w-4" />
+                          </span>
+                          <div className="text-xs">
+                            <span className="block text-[10px] font-bold uppercase tracking-wider text-red-100">Selected variant</span>
+                            <strong className="text-sm font-black">{activeVariant.variant_name}</strong>
+                            <span className="text-red-100"> ({activeVariant.fuel_type || 'Petrol'}, {activeVariant.transmission})</span>
+                          </div>
                         </div>
-                        <span className="font-mono font-black text-red-600 text-base">
+                        <span className="relative text-2xl font-black tabular-nums">
                           {formatPriceOption(activeVariant.ex_showroom_price)}
                         </span>
                       </div>
@@ -676,18 +750,20 @@ export default function Calculator() {
                   </div>
                 ) : (
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1.5">Enter Ex-Showroom Price in INR (₹) *</label>
-                    <input
-                      type="number"
-                      value={customExShowroom}
-                      onChange={(e) => {
-                        setCustomExShowroom(e.target.value);
-                        setBreakdownResult(null);
-                      }}
-                      placeholder="e.g. 1250000"
-                      className="w-full px-4 py-3 rounded-lg bg-white border border-slate-200 text-slate-950 text-xs sm:text-sm font-mono font-bold focus:outline-none focus:border-red-500 shadow-sm"
-                    />
-                    <span className="text-[11px] text-slate-400 mt-1 block">
+                    <label className="block">
+                      <FieldLabel>Enter ex-showroom price in INR (₹) *</FieldLabel>
+                      <input
+                        type="number"
+                        value={customExShowroom}
+                        onChange={(e) => {
+                          setCustomExShowroom(e.target.value);
+                          setBreakdownResult(null);
+                        }}
+                        placeholder="e.g. 1250000"
+                        className="h-14 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm font-black tabular-nums text-slate-950 shadow-sm outline-none transition-all placeholder:font-semibold placeholder:text-slate-400 hover:border-red-300 focus:border-red-500 focus:ring-4 focus:ring-red-600/10"
+                      />
+                    </label>
+                    <span className="mt-2 block text-[11px] font-semibold text-slate-400">
                       Interpolates state road tax slabs based on your custom ex-showroom input.
                     </span>
                   </div>
@@ -695,25 +771,22 @@ export default function Calculator() {
               </div>
             )}
 
-            {/* STEP 3: STATE & PAYMENT OPTIONS */}
-            <div className="space-y-4 pt-6 border-t border-slate-200">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2.5 text-sm font-bold text-slate-950">
-                  <div className="w-7 h-7 rounded-full bg-red-600 text-white flex items-center justify-center text-xs font-bold font-mono">
-                    3
-                  </div>
-                  <span>State Registration &amp; Payment Details</span>
-                </div>
-                <span className="text-[11px] font-mono text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
-                  36 States/UT Slabs
-                </span>
-              </div>
+            {/* STEP 3 */}
+            <div className="relative space-y-5 border-t border-slate-100 pt-7">
+              <StepHeader
+                number="3"
+                title="State registration & payment details"
+                right={(
+                  <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[11px] font-extrabold text-emerald-700">
+                    36 states / UT slabs
+                  </span>
+                )}
+              />
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* State Selector */}
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">Registration State / UT *</label>
-                  <select
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <label className="block">
+                  <FieldLabel>Registration state / UT *</FieldLabel>
+                  <SelectBox
                     value={selectedStateId}
                     onChange={(e) => {
                       setSelectedStateId(e.target.value);
@@ -723,117 +796,85 @@ export default function Calculator() {
                         setBreakdownResult(null);
                       }
                     }}
-                    className="w-full px-4 py-3 rounded-lg bg-white border border-slate-200 text-slate-950 text-xs sm:text-sm font-bold focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100 transition-all cursor-pointer shadow-sm"
                   >
                     {states.map((s) => (
                       <option key={s.id} value={s.id}>
                         {s.name} ({s.code})
                       </option>
                     ))}
-                  </select>
-                </div>
+                  </SelectBox>
+                </label>
 
-                {/* Ownership Category */}
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">Ownership Category *</label>
-                  <div className="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-lg border border-slate-200">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setOwnershipType('individual');
-                        if (unlockedUser && breakdownResult) executeCalculation();
-                        else setBreakdownResult(null);
-                      }}
-                      className={`py-2 px-3 rounded-md text-xs font-bold transition-all cursor-pointer ${
-                        ownershipType === 'individual' ? 'bg-red-600 text-white shadow-md' : 'text-slate-600 hover:text-slate-950'
-                      }`}
-                    >
-                      Individual
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setOwnershipType('company');
-                        if (unlockedUser && breakdownResult) executeCalculation();
-                        else setBreakdownResult(null);
-                      }}
-                      className={`py-2 px-3 rounded-md text-xs font-bold transition-all cursor-pointer ${
-                        ownershipType === 'company' ? 'bg-red-600 text-white shadow-md' : 'text-slate-600 hover:text-slate-950'
-                      }`}
-                    >
-                      Corporate
-                    </button>
-                  </div>
+                  <FieldLabel>Ownership category *</FieldLabel>
+                  <Segmented
+                    value={ownershipType}
+                    options={[
+                      { value: 'individual', label: 'Individual' },
+                      { value: 'company', label: 'Corporate' },
+                    ]}
+                    onSelect={(val) => {
+                      setOwnershipType(val);
+                      recalcOrReset();
+                    }}
+                  />
                 </div>
               </div>
 
-              {/* Payment Type */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">Payment Method *</label>
-                  <div className="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-lg border border-slate-200">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsFinanced(false);
-                        if (unlockedUser && breakdownResult) executeCalculation();
-                        else setBreakdownResult(null);
-                      }}
-                      className={`py-2 px-3 rounded-md text-xs font-bold transition-all cursor-pointer ${
-                        !isFinanced ? 'bg-red-600 text-white shadow-md' : 'text-slate-600 hover:text-slate-950'
-                      }`}
-                    >
-                      Outright Cash
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsFinanced(true);
-                        if (unlockedUser && breakdownResult) executeCalculation();
-                        else setBreakdownResult(null);
-                      }}
-                      className={`py-2 px-3 rounded-md text-xs font-bold transition-all cursor-pointer ${
-                        isFinanced ? 'bg-red-600 text-white shadow-md' : 'text-slate-600 hover:text-slate-950'
-                      }`}
-                    >
-                      Bank Loan
-                    </button>
-                  </div>
+                  <FieldLabel>Payment method *</FieldLabel>
+                  <Segmented
+                    value={isFinanced}
+                    options={[
+                      { value: false, label: 'Outright cash' },
+                      { value: true, label: 'Bank loan' },
+                    ]}
+                    onSelect={(val) => {
+                      setIsFinanced(val);
+                      recalcOrReset();
+                    }}
+                  />
                 </div>
 
                 {activeState && isFinanced && (
-                  <div className="flex items-center text-xs text-slate-500 font-medium pt-5">
-                    <Shield className="w-4 h-4 text-emerald-600 mr-1.5 shrink-0" />
+                  <div className="flex items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50/70 p-3 text-xs font-semibold text-emerald-800 sm:mt-7">
+                    <Shield className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
                     <span>Includes RTO hypothecation endorsement fee (₹{Number(activeState.hypothecation_fee || 1500).toLocaleString('en-IN')}).</span>
                   </div>
                 )}
               </div>
             </div>
 
-            {/* SUBMIT BUTTON */}
-            <div className="pt-6 border-t border-slate-200">
+            {/* SUBMIT */}
+            <div className="relative border-t border-slate-100 pt-7">
               <button
                 type="button"
                 disabled={leadMutation.isPending}
                 onClick={handleCalculateClick}
-                className="w-full py-4 px-6 rounded-lg bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white font-extrabold text-sm sm:text-base shadow-xl shadow-red-200 hover:shadow-red-300 transition-all flex items-center justify-center space-x-2 group cursor-pointer"
+                className={`group relative flex w-full cursor-pointer items-center justify-between gap-3 overflow-hidden bg-red-600 py-2 pl-6 pr-2 text-sm font-extrabold text-white shadow-xl transition-all duration-300 hover:-translate-y-0.5 hover:bg-red-700 active:scale-[0.99] disabled:pointer-events-none disabled:opacity-60 sm:text-base ${CUT_LG}`}
               >
-                <Sparkles className="w-5 h-5 text-white group-hover:rotate-12 transition-transform" />
-                <span>
-                  {activeVehicle?.is_tba
-                    ? 'View TBA Status Notice'
-                    : leadMutation.isPending
-                    ? 'Calculating Itemized On-Road Price...'
-                    : unlockedUser
-                    ? 'Calculate On-Road Price'
-                    : 'Calculate & Unlock On-Road Price'}
+                <span aria-hidden="true" className="absolute inset-y-0 -left-1/2 w-1/3 -skew-x-[22deg] bg-white/35 transition-all duration-700 group-hover:left-[130%]" />
+                <span className="relative flex items-center gap-2.5">
+                  <Sparkles className={`h-5 w-5 transition-transform duration-300 group-hover:rotate-12 ${leadMutation.isPending ? 'animate-pulse' : ''}`} />
+                  <span>
+                    {activeVehicle?.is_tba
+                      ? 'View TBA status notice'
+                      : leadMutation.isPending
+                      ? 'Calculating itemized on-road price…'
+                      : unlockedUser
+                      ? 'Calculate on-road price'
+                      : 'Calculate & unlock on-road price'}
+                  </span>
                 </span>
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                <span className={`relative grid h-12 w-12 flex-none place-items-center bg-white text-red-600 transition-transform duration-300 group-hover:translate-x-0.5 ${CUT_SM}`}>
+                  <ArrowUpRight className="h-5 w-5 transition-transform duration-300 group-hover:rotate-45" />
+                </span>
               </button>
             </div>
           </div>
 
-          {/* RESULTS BREAKDOWN */}
+          {/* ---------- RESULTS ---------- */}
           {breakdownResult && (
             <div ref={breakdownRef} className="scroll-mt-20">
               <PriceBreakdownTable
