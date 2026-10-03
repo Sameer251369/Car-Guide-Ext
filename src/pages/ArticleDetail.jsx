@@ -3,7 +3,18 @@ import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import api, { toAppMediaUrl } from '../api/client';
 import SEOHead from '../components/SEOHead';
-import { Calendar, User, ArrowLeft, Calculator, ShieldCheck, Tag } from 'lucide-react';
+import { Calendar, User, ArrowLeft, ArrowUpRight, Calculator, Tag } from 'lucide-react';
+
+/*
+  Same tokens as Home.jsx / Blog.jsx
+  - Ink #000000 header + CTA band, Paper #ffffff reading surface, Signal #ff3b2f accent
+  - Glass used once: the category chip over the black header
+*/
+
+const focusRing =
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff3b2f] focus-visible:ring-offset-2 focus-visible:ring-offset-black';
+const focusRingLight =
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff3b2f] focus-visible:ring-offset-2 focus-visible:ring-offset-white';
 
 export default function ArticleDetail() {
   const { slug } = useParams();
@@ -15,20 +26,26 @@ export default function ArticleDetail() {
 
   if (isLoading) {
     return (
-      <div className="py-20 text-center text-slate-400">
-        <div className="animate-spin w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full mx-auto mb-4" />
-        <p className="text-xs">Loading article...</p>
+      <div className="flex min-h-screen flex-col items-center justify-center bg-white text-black/70" role="status">
+        <div className="mb-4 h-8 w-8 rounded-full border-2 border-[#ff3b2f] border-t-transparent motion-safe:animate-spin" />
+        <p className="text-base">Loading article…</p>
       </div>
     );
   }
 
   if (error || !article) {
     return (
-      <div className="py-20 text-center text-slate-400 space-y-4">
-        <h2 className="text-xl font-bold text-white">Article Not Found</h2>
-        <Link to="/blog" className="inline-flex items-center space-x-2 text-amber-400 text-xs font-bold">
-          <ArrowLeft className="w-4 h-4" />
-          <span>Back to Editorial Journal</span>
+      <div className="flex min-h-screen flex-col items-center justify-center bg-white px-5 text-center">
+        <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">Article not found</h1>
+        <p className="mt-3 max-w-[40ch] text-black/65">
+          It may have been moved or removed. Head back to the journal to see everything we’ve published.
+        </p>
+        <Link
+          to="/blog"
+          className={`mt-8 inline-flex items-center gap-2 rounded-full bg-black px-6 py-3 font-semibold text-white transition-colors hover:bg-[#ff3b2f] ${focusRingLight}`}
+        >
+          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+          Back to journal
         </Link>
       </div>
     );
@@ -47,93 +64,108 @@ export default function ArticleDetail() {
         description={article.meta_description || article.excerpt}
       />
 
-      <article className="py-12 bg-slate-950 min-h-screen">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-          
-          <Link to="/blog" className="inline-flex items-center space-x-2 text-xs font-semibold text-slate-400 hover:text-white transition-colors">
-            <ArrowLeft className="w-4 h-4" />
-            <span>Back to Journal</span>
-          </Link>
+      <article className="min-h-screen bg-white text-black">
+        {/* HEADER: flat black, oversized title */}
+        <header className="bg-black text-white">
+          <div className="mx-auto w-full max-w-[1100px] px-5 pb-12 pt-28 sm:px-8 lg:px-12 lg:pb-16 lg:pt-36">
+            <Link
+              to="/blog"
+              className={`inline-flex items-center gap-2 rounded-sm text-base text-white/70 transition-colors hover:text-white ${focusRing}`}
+            >
+              <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+              <span>Back to journal</span>
+            </Link>
 
-          {/* Header */}
-          <div className="space-y-4">
-            <div className="flex items-center space-x-3">
-              <span className="px-3 py-1 rounded-md text-xs font-bold bg-amber-500/10 text-amber-300 border border-amber-500/30 uppercase tracking-wider">
-                {article.category?.name || 'Editorial'}
-              </span>
+            <div className="mt-10 inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-sm font-semibold text-white backdrop-blur-2xl">
+              {article.category?.name || 'Editorial'}
             </div>
 
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white font-serif leading-tight">
+            <h1 className="mt-6 max-w-[20ch] text-[clamp(2.5rem,7vw,6rem)] font-extrabold leading-[0.95] tracking-[-0.04em]">
               {article.title}
             </h1>
 
-            <div className="flex items-center space-x-4 text-xs text-slate-400 border-y border-slate-900 py-3">
-              <span className="flex items-center space-x-1.5">
-                <User className="w-4 h-4 text-amber-400" />
-                <span className="font-semibold text-slate-200">{article.author_name}</span>
+            <div className="mt-10 flex flex-wrap items-center gap-x-8 gap-y-3 text-base text-white/70">
+              <span className="inline-flex items-center gap-2">
+                <User className="h-4 w-4 text-[#ff3b2f]" aria-hidden="true" />
+                <span className="font-semibold text-white">{article.author_name}</span>
               </span>
-              <span>•</span>
-              <span className="flex items-center space-x-1.5">
-                <Calendar className="w-4 h-4 text-slate-500" />
-                <span>{formattedDate}</span>
+              <span className="inline-flex items-center gap-2">
+                <Calendar className="h-4 w-4" aria-hidden="true" />
+                <time dateTime={article.published_at}>{formattedDate}</time>
               </span>
             </div>
           </div>
+        </header>
 
-          {/* Featured Image */}
-          {article.featured_image_url && (
-            <div className="rounded-3xl overflow-hidden bg-slate-900 border border-slate-800 aspect-[16/9] shadow-2xl">
+        {/* FEATURED IMAGE */}
+        {article.featured_image_url && (
+          <div className="mx-auto w-full max-w-[1100px] px-5 pt-10 sm:px-8 lg:px-12">
+            <div className="aspect-[16/9] overflow-hidden rounded-2xl bg-[#eeeeee]">
               <img
                 src={toAppMediaUrl(article.featured_image_url)}
                 alt={article.title}
-                className="w-full h-full object-cover"
+                className="h-full w-full object-cover"
               />
             </div>
-          )}
+          </div>
+        )}
 
-          {/* Excerpt */}
-          {article.excerpt && (
-            <p className="text-base sm:text-lg text-slate-300 italic font-serif leading-relaxed border-l-2 border-amber-500 pl-4 py-1">
-              "{article.excerpt}"
-            </p>
-          )}
+        {/* READING COLUMN */}
+        <div className="mx-auto w-full max-w-[1100px] px-5 py-14 sm:px-8 sm:py-20 lg:px-12">
+          <div className="mx-auto max-w-[68ch]">
+            {article.excerpt && (
+              <p className="border-l-4 border-[#ff3b2f] pl-5 text-xl font-semibold leading-snug tracking-tight sm:text-2xl">
+                {article.excerpt}
+              </p>
+            )}
 
-          {/* Article Body */}
-          <div
-            className="prose prose-invert max-w-none text-slate-300 text-sm sm:text-base leading-relaxed space-y-4"
-            dangerouslySetInnerHTML={{ __html: article.body }}
-          />
+            <div
+              className="prose prose-lg mt-10 max-w-none text-black/85 prose-headings:font-extrabold prose-headings:tracking-tight prose-headings:text-black prose-a:text-[#ff3b2f] prose-a:underline-offset-4 prose-strong:text-black prose-img:rounded-xl"
+              dangerouslySetInnerHTML={{ __html: article.body }}
+            />
 
-          {/* Tags */}
-          {article.tags?.length > 0 && (
-            <div className="pt-6 border-t border-slate-900 flex items-center space-x-2">
-              <Tag className="w-4 h-4 text-amber-400" />
-              <div className="flex flex-wrap gap-2">
-                {article.tags.map((t) => (
-                  <span key={t.id} className="px-2.5 py-1 rounded-lg bg-slate-900 text-slate-400 text-xs border border-slate-800">
-                    #{t.name}
-                  </span>
-                ))}
+            {article.tags?.length > 0 && (
+              <div className="mt-14 flex items-start gap-3 border-t border-black/10 pt-6">
+                <Tag className="mt-1.5 h-4 w-4 shrink-0 text-black/50" aria-hidden="true" />
+                <ul className="flex flex-wrap gap-2" aria-label="Tags">
+                  {article.tags.map((t) => (
+                    <li
+                      key={t.id}
+                      className="rounded-full bg-[#eeeeee] px-3.5 py-1.5 text-sm font-medium text-black/75"
+                    >
+                      #{t.name}
+                    </li>
+                  ))}
+                </ul>
               </div>
-            </div>
-          )}
+            )}
+          </div>
+        </div>
 
-          {/* Inline Calculator CTA Widget */}
-          <div className="p-6 sm:p-8 rounded-3xl bg-slate-900 border border-amber-500/30 space-y-4 shadow-xl text-center sm:text-left flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="space-y-1">
-              <h3 className="text-lg font-bold text-white font-serif">Planning to buy a new car?</h3>
-              <p className="text-xs text-slate-400">Calculate accurate on-road tax, RTO fees, and insurance breakdown for your state.</p>
+        {/* CTA: flat-black band, red action */}
+        <section className="bg-black text-white" aria-labelledby="article-cta-title">
+          <div className="mx-auto flex w-full max-w-[1100px] flex-col items-start justify-between gap-8 px-5 py-14 sm:px-8 sm:py-20 lg:flex-row lg:items-center lg:px-12">
+            <div>
+              <h2
+                id="article-cta-title"
+                className="max-w-[16ch] text-[clamp(2rem,5vw,3.75rem)] font-extrabold leading-[0.95] tracking-[-0.035em]"
+              >
+                Planning to buy a new car?
+              </h2>
+              <p className="mt-4 max-w-[46ch] text-lg leading-snug text-white/70">
+                See the on-road price for your state, with road tax, RTO fees and insurance itemized.
+              </p>
             </div>
             <Link
               to="/calculator"
-              className="px-6 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-lg shadow-amber-500/20 shrink-0 flex items-center space-x-2"
+              className={`inline-flex shrink-0 items-center gap-2.5 rounded-full bg-[#ff3b2f] px-8 py-4 text-lg font-bold text-black transition-colors hover:bg-white ${focusRing}`}
             >
-              <Calculator className="w-4 h-4" />
-              <span>Launch Calculator</span>
+              <Calculator className="h-5 w-5" aria-hidden="true" />
+              <span>Calculate on-road price</span>
+              <ArrowUpRight className="h-5 w-5" aria-hidden="true" />
             </Link>
           </div>
-
-        </div>
+        </section>
       </article>
     </>
   );

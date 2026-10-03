@@ -5,10 +5,11 @@ import {
   Calendar,
   Car,
   Check,
+  Download,
   Edit3,
   Eye,
-  Filter,
   Image as ImageIcon,
+  IndianRupee,
   LogOut,
   MapPin,
   Plus,
@@ -16,12 +17,126 @@ import {
   Search,
   Tag,
   Trash2,
+  Users,
   X,
-  Download,
-  DollarSign
 } from 'lucide-react';
 import api, { toAppMediaUrl } from '../api/client';
 import SEOHead from '../components/SEOHead';
+
+/*
+  Admin layout
+  - Flat-black sidebar (nav + refresh + logout), light workspace so tables and forms stay readable
+  - Brand red #dc2626 only for the primary action in each view, focus rings and pending status
+  - Add Car: two-column form with a sticky photos + publish column
+  - Edit Car: slide-over drawer with sticky header and footer
+*/
+
+const focusRing =
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#dc2626] focus-visible:ring-offset-2';
+
+const inputCls =
+  'w-full rounded-xl border border-black/15 bg-white px-3.5 py-2.5 text-sm text-black placeholder:text-black/40 transition-colors focus:border-[#dc2626] focus:outline-none focus:ring-2 focus:ring-[#dc2626]/20';
+const fileCls = `${inputCls} p-2 file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-black file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-white hover:file:bg-[#dc2626]`;
+
+const btnPrimary = `inline-flex items-center justify-center gap-2 rounded-xl bg-[#dc2626] px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-[#b91c1c] disabled:cursor-not-allowed disabled:opacity-60 ${focusRing}`;
+const btnDark = `inline-flex items-center justify-center gap-2 rounded-xl bg-black px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-black/80 disabled:opacity-60 ${focusRing}`;
+const btnGhost = `inline-flex items-center justify-center gap-2 rounded-xl border border-black/15 bg-white px-4 py-2.5 text-sm font-semibold text-black transition-colors hover:bg-black/5 ${focusRing}`;
+const iconBtnDanger = `rounded-lg border border-red-200 p-2 text-red-600 transition-colors hover:bg-red-50 disabled:opacity-40 ${focusRing}`;
+
+const tabs = [
+  { id: 'leads', label: 'Leads', icon: Users },
+  { id: 'cars', label: 'Cars', icon: Car },
+  { id: 'add-car', label: 'Add car', icon: Plus },
+];
+
+const tabMeta = {
+  leads: ['Leads', 'Enquiries from the on-road price calculator. Filter them, then export what you see as CSV.'],
+  cars: ['Cars', 'Every vehicle in the catalog. Edit prices, variants and photos.'],
+  'add-car': ['Add a car', 'Published cars go live in New Cars, vehicle pages and the calculator right away.'],
+};
+
+const emptyVehicleForm = {
+  brand_name: '',
+  name: '',
+  body_type: 'SUV',
+  fuel_type: 'Petrol',
+  ev_hybrid_cng_flag: 'No',
+  starting_price: '',
+  top_variant_price: '',
+  ex_showroom_price: '',
+  seats: '',
+  transmission: 'Manual/Automatic',
+  description: '',
+  key_specs: '{"engine": "", "mileage": ""}',
+  is_featured: false,
+  is_tba: false,
+  meta_description: '',
+};
+
+const emptyEditImages = {
+  primary_image: null,
+  front_image: null,
+  exterior_image: null,
+  interior_image: null,
+  rear_image: null,
+};
+
+const formatINR = (value) => `₹ ${Number(value || 0).toLocaleString('en-IN')}`;
+
+const apiErrorText = (error) => {
+  const data = error?.response?.data;
+  return data && typeof data === 'object' ? Object.values(data).flat().join(' ') : '';
+};
+
+/* ---------- small presentational helpers (module level so inputs never remount) ---------- */
+
+function Field({ label, hint, className = '', children }) {
+  return (
+    <label className={`block ${className}`}>
+      <span className="mb-1.5 block text-sm font-medium text-black/80">{label}</span>
+      {children}
+      {hint && <span className="mt-1 block text-xs text-black/50">{hint}</span>}
+    </label>
+  );
+}
+
+function Panel({ title, icon: Icon, action, children, className = '' }) {
+  return (
+    <section className={`rounded-2xl border border-black/10 bg-white p-5 sm:p-6 ${className}`}>
+      {(title || action) && (
+        <div className="mb-5 flex items-center justify-between gap-3">
+          <h3 className="flex items-center gap-2 text-base font-bold tracking-tight">
+            {Icon && <Icon size={18} className="text-[#dc2626]" aria-hidden="true" />}
+            {title}
+          </h3>
+          {action}
+        </div>
+      )}
+      {children}
+    </section>
+  );
+}
+
+function Toggle({ label, ...props }) {
+  return (
+    <label className="inline-flex cursor-pointer items-center gap-2.5 text-sm font-medium text-black/80">
+      <input type="checkbox" className="h-4 w-4 rounded border-black/30 accent-[#dc2626]" {...props} />
+      {label}
+    </label>
+  );
+}
+
+function StatusPill({ exported }) {
+  return (
+    <span
+      className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
+        exported ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
+      }`}
+    >
+      {exported ? 'Exported' : 'Pending'}
+    </span>
+  );
+}
 
 export default function AdminWorklist({ onLogout }) {
   const queryClient = useQueryClient();
@@ -43,32 +158,10 @@ export default function AdminWorklist({ onLogout }) {
   const [editingVehicle, setEditingVehicle] = useState(null);
   const [editForm, setEditForm] = useState({});
   const [editVariants, setEditVariants] = useState([]);
-  const [editImages, setEditImages] = useState({
-    primary_image: null,
-    front_image: null,
-    exterior_image: null,
-    interior_image: null,
-    rear_image: null,
-  });
+  const [editImages, setEditImages] = useState(emptyEditImages);
 
   // --- ADD VEHICLE STATE ---
-  const [vehicleForm, setVehicleForm] = useState({
-    brand_name: '',
-    name: '',
-    body_type: 'SUV',
-    fuel_type: 'Petrol',
-    ev_hybrid_cng_flag: 'No',
-    starting_price: '',
-    top_variant_price: '',
-    ex_showroom_price: '',
-    seats: '',
-    transmission: 'Manual/Automatic',
-    description: '',
-    key_specs: '{"engine": "", "mileage": ""}',
-    is_featured: false,
-    is_tba: false,
-    meta_description: '',
-  });
+  const [vehicleForm, setVehicleForm] = useState(emptyVehicleForm);
   const [primaryImage, setPrimaryImage] = useState(null);
   const [vehicleImages, setVehicleImages] = useState({
     front_image: null,
@@ -77,11 +170,11 @@ export default function AdminWorklist({ onLogout }) {
     rear_image: null,
   });
   const [publishedVehicle, setPublishedVehicle] = useState(null);
-  const [toastMessage, setToastMessage] = useState(null);
+  const [toast, setToast] = useState(null);
 
-  const showNotification = (msg) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 4000);
+  const showNotification = (message, tone = 'success') => {
+    setToast({ message, tone });
+    setTimeout(() => setToast(null), 4000);
   };
 
   // --- QUERIES ---
@@ -90,12 +183,6 @@ export default function AdminWorklist({ onLogout }) {
     queryFn: () => api.getStates(),
   });
   const states = statesData || [];
-
-  const { data: facetsData } = useQuery({
-    queryKey: ['vehicle-facets'],
-    queryFn: () => api.getVehicleFacets(),
-  });
-  const brands = facetsData?.brands || [];
 
   // Admin Leads Query with All Filters
   const leadQueryParams = useMemo(() => {
@@ -119,6 +206,14 @@ export default function AdminWorklist({ onLogout }) {
   const leadCount = leadData?.count ?? leads.length;
   const leadPageCount = Math.max(1, Math.ceil(leadCount / (leadData?.page_size || 10)));
 
+  const activeFilterCount = [
+    leadExportFilter !== 'all',
+    datePreset !== 'all',
+    stateFilter !== 'all',
+    carFilter !== 'all',
+    Boolean(leadSearch.trim()),
+  ].filter(Boolean).length;
+
   // Admin Vehicles Query (Records of Cars)
   const carQueryParams = useMemo(() => {
     const params = {};
@@ -138,34 +233,32 @@ export default function AdminWorklist({ onLogout }) {
     setLeadPage(1);
   }, [leadExportFilter, datePreset, dateFrom, dateTo, stateFilter, carFilter, leadSearch]);
 
+  // Escape closes the edit drawer
+  useEffect(() => {
+    if (!editingVehicle) return undefined;
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') setEditingVehicle(null);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [editingVehicle]);
+
   // --- MUTATIONS ---
   const publishVehicleMutation = useMutation({
     mutationFn: (payload) => api.createAdminVehicle(payload),
     onSuccess: (result) => {
       setPublishedVehicle(result.vehicle);
-      setVehicleForm({
-        brand_name: '',
-        name: '',
-        body_type: 'SUV',
-        fuel_type: 'Petrol',
-        ev_hybrid_cng_flag: 'No',
-        starting_price: '',
-        top_variant_price: '',
-        ex_showroom_price: '',
-        seats: '',
-        transmission: 'Manual/Automatic',
-        description: '',
-        key_specs: '{"engine": "", "mileage": ""}',
-        is_featured: false,
-        is_tba: false,
-        meta_description: '',
-      });
+      setVehicleForm(emptyVehicleForm);
       setPrimaryImage(null);
       setVehicleImages({ front_image: null, exterior_image: null, interior_image: null, rear_image: null });
       queryClient.invalidateQueries({ queryKey: ['admin-vehicles-record'] });
       queryClient.invalidateQueries({ queryKey: ['vehicles-301'] });
       queryClient.invalidateQueries({ queryKey: ['vehicle-facets'] });
-      showNotification('Car published successfully!');
+      showNotification('Car published.');
+    },
+    onError: (error) => {
+      const details = apiErrorText(error);
+      showNotification(details ? `Publish failed: ${details}` : 'Publish failed. Please try again.', 'error');
     },
   });
 
@@ -177,14 +270,11 @@ export default function AdminWorklist({ onLogout }) {
       queryClient.invalidateQueries({ queryKey: ['vehicles-301'] });
       queryClient.invalidateQueries({ queryKey: ['calculator-vehicles-master'] });
       queryClient.invalidateQueries({ queryKey: ['vehicle-facets'] });
-      showNotification('Car and variants updated successfully!');
+      showNotification('Car and variants updated.');
     },
     onError: (error) => {
-      const responseData = error?.response?.data;
-      const details = responseData && typeof responseData === 'object'
-        ? Object.values(responseData).flat().join(' ')
-        : '';
-      showNotification(details ? `Update failed: ${details}` : 'Car update failed. Please try again.');
+      const details = apiErrorText(error);
+      showNotification(details ? `Update failed: ${details}` : 'Car update failed. Please try again.', 'error');
     },
   });
 
@@ -195,6 +285,7 @@ export default function AdminWorklist({ onLogout }) {
       queryClient.invalidateQueries({ queryKey: ['vehicles-301'] });
       showNotification('Car deleted.');
     },
+    onError: () => showNotification('Could not delete the car. Please try again.', 'error'),
   });
 
   const deleteLeadMutation = useMutation({
@@ -203,6 +294,7 @@ export default function AdminWorklist({ onLogout }) {
       queryClient.invalidateQueries({ queryKey: ['admin-leads'] });
       showNotification('Lead deleted.');
     },
+    onError: () => showNotification('Could not delete the lead. Please try again.', 'error'),
   });
 
   // --- HANDLERS ---
@@ -218,15 +310,20 @@ export default function AdminWorklist({ onLogout }) {
       document.body.appendChild(link);
       link.click();
       link.parentNode.removeChild(link);
-      showNotification('Leads exported successfully.');
+      showNotification('Leads exported.');
     } catch (err) {
       console.error('Export failed', err);
-      alert('Lead export failed.');
+      showNotification('Lead export failed.', 'error');
     }
   };
 
   const handleLogout = async () => {
     if (onLogout) await onLogout();
+  };
+
+  const handleRefresh = () => {
+    refetchLeads();
+    refetchCars();
   };
 
   const resetLeadFilters = () => {
@@ -277,7 +374,7 @@ export default function AdminWorklist({ onLogout }) {
     publishVehicleMutation.mutate(payload);
   };
 
-  // --- EDIT MODAL HANDLERS ---
+  // --- EDIT HANDLERS ---
   const startEditingVehicle = (car) => {
     setEditingVehicle(car);
     setEditVariants(car.variants ? car.variants.map((v) => ({ ...v })) : []);
@@ -300,13 +397,7 @@ export default function AdminWorklist({ onLogout }) {
       meta_title: car.meta_title || '',
       meta_description: car.meta_description || '',
     });
-    setEditImages({
-      primary_image: null,
-      front_image: null,
-      exterior_image: null,
-      interior_image: null,
-      rear_image: null,
-    });
+    setEditImages(emptyEditImages);
   };
 
   const handleEditField = (event) => {
@@ -387,921 +478,746 @@ export default function AdminWorklist({ onLogout }) {
     }
   };
 
+  const tabCounts = { leads: leadCount, cars: adminCars.length };
+  const [pageTitle, pageIntro] = tabMeta[activeTab];
+  const visibleEditVariants = editVariants.filter((v) => !v.delete);
+
   return (
     <>
       <SEOHead title="Admin Panel | Car Guide Media" description="Protected admin lead and car management dashboard." />
-      <div className="min-h-screen bg-slate-950 py-10 text-slate-100">
-        <div className="mx-auto max-w-7xl space-y-6 px-4 sm:px-6 lg:px-8">
-          
-          {/* Header */}
-          <div className="flex flex-col gap-4 rounded-2xl border border-slate-800 bg-slate-900/90 p-6 shadow-xl md:flex-row md:items-center md:justify-between">
-            <div>
-              <p className="text-xs uppercase tracking-[0.25em] font-semibold text-amber-400">Client Admin Control Panel</p>
-              <h1 className="mt-1 text-3xl font-extrabold text-white tracking-tight">Management Dashboard</h1>
-            </div>
-            <div className="flex flex-wrap items-center gap-3">
-              <button
-                onClick={() => {
-                  refetchLeads();
-                  refetchCars();
-                }}
-                className="flex items-center gap-2 rounded-xl bg-slate-800 px-4 py-2.5 text-sm font-medium text-slate-200 hover:bg-slate-700 transition"
-              >
-                <RefreshCw size={16} /> Refresh Data
-              </button>
-              <button
-                onClick={handleExportLeads}
-                className="flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-bold text-slate-950 hover:bg-amber-400 transition"
-              >
-                <Download size={16} /> Export Filtered CSV
-              </button>
-              <button
-                onClick={handleLogout}
-                className="flex items-center gap-2 rounded-xl border border-slate-700 px-4 py-2.5 text-sm font-medium text-slate-300 hover:bg-slate-800 transition"
-              >
-                <LogOut size={16} /> Logout
-              </button>
-            </div>
+
+      <div className="min-h-screen bg-[#f4f4f4] text-black">
+        {/* SIDEBAR (desktop) */}
+        <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col bg-black text-white lg:flex">
+          <div className="px-6 pb-6 pt-8">
+            <p className="text-xl font-extrabold tracking-tight">Car Guide Media</p>
+            <p className="mt-1 text-sm text-white/55">Admin dashboard</p>
           </div>
 
-          {/* Toast notification */}
-          {toastMessage && (
-            <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm font-medium text-emerald-300 animate-fade-in flex items-center gap-2">
-              <Check size={18} />
-              <span>{toastMessage}</span>
-            </div>
-          )}
-
-          {/* Navigation Tabs */}
-          <div className="flex border-b border-slate-800 gap-2">
-            <button
-              onClick={() => setActiveTab('leads')}
-              className={`flex items-center gap-2 border-b-2 px-5 py-3 text-sm font-semibold transition ${
-                activeTab === 'leads'
-                  ? 'border-amber-400 text-amber-400 bg-slate-900/50 rounded-t-xl'
-                  : 'border-transparent text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <Filter size={18} /> Leads & Filtering
-              <span className="ml-1 rounded-full bg-slate-800 px-2.5 py-0.5 text-xs text-amber-300 font-bold">{leadCount}</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('cars')}
-              className={`flex items-center gap-2 border-b-2 px-5 py-3 text-sm font-semibold transition ${
-                activeTab === 'cars'
-                  ? 'border-amber-400 text-amber-400 bg-slate-900/50 rounded-t-xl'
-                  : 'border-transparent text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <Car size={18} /> Admin Cars Record (Update Price & Pics)
-              <span className="ml-1 rounded-full bg-slate-800 px-2.5 py-0.5 text-xs text-amber-300 font-bold">{adminCars.length}</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('add-car')}
-              className={`flex items-center gap-2 border-b-2 px-5 py-3 text-sm font-semibold transition ${
-                activeTab === 'add-car'
-                  ? 'border-amber-400 text-amber-400 bg-slate-900/50 rounded-t-xl'
-                  : 'border-transparent text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <Plus size={18} /> Add New Car
-            </button>
-          </div>
-
-          {/* TAB 1: LEADS & FILTERING */}
-          {activeTab === 'leads' && (
-            <div className="space-y-6">
-              
-              {/* Filter Control Box */}
-              <div className="rounded-2xl border border-slate-800 bg-slate-900/90 p-5 space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-semibold uppercase tracking-wider text-amber-400 flex items-center gap-2">
-                    <Filter size={16} /> Filter Leads by Date, State, and Car
-                  </h3>
-                  <button
-                    onClick={resetLeadFilters}
-                    className="text-xs text-slate-400 hover:text-amber-300 underline underline-offset-4"
-                  >
-                    Reset all filters
-                  </button>
-                </div>
-
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-                  {/* Date Quick Presets */}
-                  <div>
-                    <label className="mb-1.5 block text-xs font-medium text-slate-300 flex items-center gap-1.5">
-                      <Calendar size={14} className="text-amber-400" /> Time / Date Range
-                    </label>
-                    <select
-                      value={datePreset}
-                      onChange={(e) => setDatePreset(e.target.value)}
-                      className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white outline-none focus:border-amber-400"
-                    >
-                      <option value="all">All Time</option>
-                      <option value="today">Today</option>
-                      <option value="yesterday">Yesterday</option>
-                      <option value="7days">Last 7 Days</option>
-                      <option value="30days">Last 30 Days</option>
-                      <option value="custom">Custom Date Range</option>
-                    </select>
-                  </div>
-
-                  {/* Custom Date From */}
-                  {datePreset === 'custom' && (
-                    <>
-                      <div>
-                        <label className="mb-1.5 block text-xs font-medium text-slate-300">From Date</label>
-                        <input
-                          type="date"
-                          value={dateFrom}
-                          onChange={(e) => setDateFrom(e.target.value)}
-                          className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white outline-none focus:border-amber-400"
-                        />
-                      </div>
-                      <div>
-                        <label className="mb-1.5 block text-xs font-medium text-slate-300">To Date</label>
-                        <input
-                          type="date"
-                          value={dateTo}
-                          onChange={(e) => setDateTo(e.target.value)}
-                          className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white outline-none focus:border-amber-400"
-                        />
-                      </div>
-                    </>
+          <nav className="flex-1 space-y-1 px-3" aria-label="Admin sections">
+            {tabs.map(({ id, label, icon: Icon }) => {
+              const active = activeTab === id;
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => setActiveTab(id)}
+                  aria-current={active ? 'page' : undefined}
+                  className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-base font-semibold transition-colors ${focusRing} focus-visible:ring-offset-black ${
+                    active ? 'bg-white/10 text-white' : 'text-white/60 hover:bg-white/5 hover:text-white'
+                  }`}
+                >
+                  <span className={`h-5 w-1 rounded-full ${active ? 'bg-[#dc2626]' : 'bg-transparent'}`} aria-hidden="true" />
+                  <Icon size={18} aria-hidden="true" />
+                  <span className="flex-1">{label}</span>
+                  {tabCounts[id] !== undefined && (
+                    <span className="rounded-full bg-white/10 px-2.5 py-0.5 text-xs font-bold text-white/80">
+                      {tabCounts[id]}
+                    </span>
                   )}
+                </button>
+              );
+            })}
+          </nav>
 
-                  {/* State Filter */}
-                  <div>
-                    <label className="mb-1.5 block text-xs font-medium text-slate-300 flex items-center gap-1.5">
-                      <MapPin size={14} className="text-amber-400" /> State
-                    </label>
-                    <select
-                      value={stateFilter}
-                      onChange={(e) => setStateFilter(e.target.value)}
-                      className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white outline-none focus:border-amber-400"
-                    >
-                      <option value="all">All States</option>
-                      {states.map((s) => (
-                        <option key={s.id} value={s.id}>
-                          {s.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+          <div className="space-y-1 border-t border-white/10 p-3">
+            <button
+              type="button"
+              onClick={handleRefresh}
+              className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-white/70 transition-colors hover:bg-white/5 hover:text-white ${focusRing} focus-visible:ring-offset-black`}
+            >
+              <RefreshCw size={16} aria-hidden="true" /> Refresh data
+            </button>
+            <button
+              type="button"
+              onClick={handleLogout}
+              className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-white/70 transition-colors hover:bg-white/5 hover:text-white ${focusRing} focus-visible:ring-offset-black`}
+            >
+              <LogOut size={16} aria-hidden="true" /> Log out
+            </button>
+          </div>
+        </aside>
 
-                  {/* Car Filter */}
-                  <div>
-                    <label className="mb-1.5 block text-xs font-medium text-slate-300 flex items-center gap-1.5">
-                      <Car size={14} className="text-amber-400" /> Car / Model
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Swift, Creta, Tata..."
-                      value={carFilter === 'all' ? '' : carFilter}
-                      onChange={(e) => setCarFilter(e.target.value || 'all')}
-                      className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white outline-none focus:border-amber-400"
-                    />
-                  </div>
+        {/* TOP BAR (mobile / tablet) */}
+        <header className="sticky top-0 z-30 bg-black text-white lg:hidden">
+          <div className="flex items-center justify-between px-4 py-3 sm:px-6">
+            <p className="text-lg font-extrabold tracking-tight">Admin</p>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleRefresh}
+                aria-label="Refresh data"
+                className={`rounded-full border border-white/20 p-2.5 ${focusRing} focus-visible:ring-offset-black`}
+              >
+                <RefreshCw size={16} aria-hidden="true" />
+              </button>
+              <button
+                type="button"
+                onClick={handleLogout}
+                aria-label="Log out"
+                className={`rounded-full border border-white/20 p-2.5 ${focusRing} focus-visible:ring-offset-black`}
+              >
+                <LogOut size={16} aria-hidden="true" />
+              </button>
+            </div>
+          </div>
+          <nav className="flex gap-1 overflow-x-auto px-3 pb-3 sm:px-5" aria-label="Admin sections">
+            {tabs.map(({ id, label, icon: Icon }) => {
+              const active = activeTab === id;
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => setActiveTab(id)}
+                  aria-current={active ? 'page' : undefined}
+                  className={`flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold ${focusRing} focus-visible:ring-offset-black ${
+                    active ? 'bg-white text-black' : 'bg-white/10 text-white/75'
+                  }`}
+                >
+                  <Icon size={15} aria-hidden="true" />
+                  {label}
+                  {tabCounts[id] !== undefined && <span className="text-xs opacity-70">{tabCounts[id]}</span>}
+                </button>
+              );
+            })}
+          </nav>
+        </header>
 
-                  {/* Export Status */}
-                  <div>
-                    <label className="mb-1.5 block text-xs font-medium text-slate-300 flex items-center gap-1.5">
-                      <Tag size={14} className="text-amber-400" /> Export Status
-                    </label>
-                    <select
-                      value={leadExportFilter}
-                      onChange={(e) => setLeadExportFilter(e.target.value)}
-                      className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white outline-none focus:border-amber-400"
-                    >
-                      <option value="all">All Statuses</option>
-                      <option value="false">Pending Export</option>
-                      <option value="true">Already Exported</option>
-                    </select>
-                  </div>
-
-                  {/* Search Query */}
-                  <div className="lg:col-span-2">
-                    <label className="mb-1.5 block text-xs font-medium text-slate-300 flex items-center gap-1.5">
-                      <Search size={14} className="text-amber-400" /> Text Search
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Search name, phone number, city..."
-                      value={leadSearch}
-                      onChange={(e) => setLeadSearch(e.target.value)}
-                      className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white outline-none focus:border-amber-400"
-                    />
-                  </div>
-                </div>
+        {/* WORKSPACE */}
+        <main className="lg:pl-64">
+          <div className="mx-auto w-full max-w-[1280px] space-y-6 px-4 py-8 sm:px-6 lg:px-10 lg:py-10">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">{pageTitle}</h1>
+                <p className="mt-2 max-w-[60ch] text-base text-black/60">{pageIntro}</p>
               </div>
 
-              {/* Leads Table */}
-              <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 shadow-xl">
-                {leadsLoading ? (
-                  <div className="p-12 text-center text-slate-400">Loading leads data...</div>
-                ) : leads.length === 0 ? (
-                  <div className="p-12 text-center text-slate-400 space-y-2">
-                    <p className="text-lg font-semibold text-slate-200">No leads found matching current filters.</p>
-                    <p className="text-sm text-slate-500">Try adjusting your date range, state, or car filter.</p>
-                  </div>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full text-left text-sm">
-                      <thead className="bg-slate-800/80 text-xs uppercase tracking-wider text-slate-300">
-                        <tr>
-                          <th className="px-4 py-3.5">Name</th>
-                          <th className="px-4 py-3.5">Phone</th>
-                          <th className="px-4 py-3.5">City</th>
-                          <th className="px-4 py-3.5">State</th>
-                          <th className="px-4 py-3.5">Brand</th>
-                          <th className="px-4 py-3.5">Vehicle</th>
-                          <th className="px-4 py-3.5">Ex-showroom</th>
-                          <th className="px-4 py-3.5">On-road Price</th>
-                          <th className="px-4 py-3.5">Source</th>
-                          <th className="px-4 py-3.5">Date & Time</th>
-                          <th className="px-4 py-3.5">Exported</th>
-                          <th className="px-4 py-3.5">Action</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-800 text-slate-200">
-                        {leads.map((lead) => (
-                          <tr key={lead.id} className="hover:bg-slate-800/50 transition">
-                            <td className="px-4 py-3.5 font-medium text-white">{lead.name}</td>
-                            <td className="px-4 py-3.5 font-mono text-amber-300">{lead.phone_number}</td>
-                            <td className="px-4 py-3.5">{lead.city}</td>
-                            <td className="px-4 py-3.5">{lead.state_name || '—'}</td>
-                            <td className="px-4 py-3.5">{lead.brand_snapshot}</td>
-                            <td className="px-4 py-3.5 font-semibold text-white">{lead.vehicle_name_snapshot}</td>
-                            <td className="px-4 py-3.5">₹ {Number(lead.ex_showroom_price_at_query || 0).toLocaleString('en-IN')}</td>
-                            <td className="px-4 py-3.5 text-emerald-400 font-bold">₹ {Number(lead.on_road_price_calculated || 0).toLocaleString('en-IN')}</td>
-                            <td className="px-4 py-3.5 text-slate-400">{lead.source_page}</td>
-                            <td className="px-4 py-3.5 text-xs text-slate-300">
-                              {lead.created_at ? new Date(lead.created_at).toLocaleString('en-IN') : '—'}
-                            </td>
-                            <td className="px-4 py-3.5">
-                              <span
-                                className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
-                                  lead.is_exported
-                                    ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
-                                    : 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
-                                }`}
-                              >
-                                {lead.is_exported ? 'Exported' : 'Pending'}
-                              </span>
-                            </td>
-                            <td className="px-4 py-3.5">
-                              <button
-                                type="button"
-                                onClick={() => handleDeleteLead(lead)}
-                                disabled={deleteLeadMutation.isPending}
-                                className="rounded-lg border border-red-500/30 p-2 text-red-400 transition hover:bg-red-500/10 disabled:opacity-40"
-                                title="Delete lead"
-                              >
-                                <Trash2 size={14} />
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
+              {activeTab === 'leads' && (
+                <button type="button" onClick={handleExportLeads} className={btnPrimary}>
+                  <Download size={16} aria-hidden="true" /> Export CSV
+                </button>
+              )}
+              {activeTab === 'cars' && (
+                <button type="button" onClick={() => setActiveTab('add-car')} className={btnPrimary}>
+                  <Plus size={16} aria-hidden="true" /> Add a car
+                </button>
+              )}
+              {activeTab === 'add-car' && publishedVehicle && (
+                <Link to={`/vehicles/${publishedVehicle.slug}`} className={btnDark}>
+                  <Eye size={16} aria-hidden="true" /> View published car
+                </Link>
+              )}
+            </div>
 
-                {/* Pagination */}
-                {!leadsLoading && leads.length > 0 && (
-                  <div className="flex items-center justify-between border-t border-slate-800 px-6 py-4 text-sm text-slate-300">
-                    <span>
-                      Page <strong className="text-white">{leadPage}</strong> of <strong className="text-white">{leadPageCount}</strong> ({leadCount} total leads)
-                    </span>
-                    <div className="flex gap-2">
+            {/* ===== LEADS ===== */}
+            {activeTab === 'leads' && (
+              <>
+                <Panel
+                  title="Filters"
+                  action={
+                    <div className="flex items-center gap-3 text-sm">
+                      {activeFilterCount > 0 && (
+                        <span className="rounded-full bg-black px-2.5 py-0.5 text-xs font-bold text-white">
+                          {activeFilterCount} active
+                        </span>
+                      )}
                       <button
                         type="button"
-                        disabled={leadPage === 1}
-                        onClick={() => setLeadPage((page) => page - 1)}
-                        className="rounded-lg border border-slate-700 px-4 py-1.5 text-slate-200 transition hover:bg-slate-800 disabled:opacity-40"
+                        onClick={resetLeadFilters}
+                        className={`rounded-sm font-semibold underline underline-offset-4 hover:text-[#dc2626] ${focusRing}`}
                       >
-                        Previous
-                      </button>
-                      <button
-                        type="button"
-                        disabled={leadPage === leadPageCount}
-                        onClick={() => setLeadPage((page) => page + 1)}
-                        className="rounded-lg border border-slate-700 px-4 py-1.5 text-slate-200 transition hover:bg-slate-800 disabled:opacity-40"
-                      >
-                        Next
+                        Reset all
                       </button>
                     </div>
+                  }
+                >
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-12">
+                    <Field label="Search" className="lg:col-span-4">
+                      <div className="relative">
+                        <Search size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-black/40" aria-hidden="true" />
+                        <input
+                          type="text"
+                          placeholder="Name, phone number or city"
+                          value={leadSearch}
+                          onChange={(e) => setLeadSearch(e.target.value)}
+                          className={`${inputCls} pl-10`}
+                        />
+                      </div>
+                    </Field>
+
+                    <Field label="Date range" className="lg:col-span-2">
+                      <div className="relative">
+                        <Calendar size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-black/40" aria-hidden="true" />
+                        <select value={datePreset} onChange={(e) => setDatePreset(e.target.value)} className={`${inputCls} pl-10`}>
+                          <option value="all">All time</option>
+                          <option value="today">Today</option>
+                          <option value="yesterday">Yesterday</option>
+                          <option value="7days">Last 7 days</option>
+                          <option value="30days">Last 30 days</option>
+                          <option value="custom">Custom range</option>
+                        </select>
+                      </div>
+                    </Field>
+
+                    <Field label="State" className="lg:col-span-2">
+                      <div className="relative">
+                        <MapPin size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-black/40" aria-hidden="true" />
+                        <select value={stateFilter} onChange={(e) => setStateFilter(e.target.value)} className={`${inputCls} pl-10`}>
+                          <option value="all">All states</option>
+                          {states.map((s) => (
+                            <option key={s.id} value={s.id}>{s.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </Field>
+
+                    <Field label="Car or model" className="lg:col-span-2">
+                      <div className="relative">
+                        <Car size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-black/40" aria-hidden="true" />
+                        <input
+                          type="text"
+                          placeholder="e.g. Swift, Creta"
+                          value={carFilter === 'all' ? '' : carFilter}
+                          onChange={(e) => setCarFilter(e.target.value || 'all')}
+                          className={`${inputCls} pl-10`}
+                        />
+                      </div>
+                    </Field>
+
+                    <Field label="Export status" className="lg:col-span-2">
+                      <div className="relative">
+                        <Tag size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-black/40" aria-hidden="true" />
+                        <select value={leadExportFilter} onChange={(e) => setLeadExportFilter(e.target.value)} className={`${inputCls} pl-10`}>
+                          <option value="all">All</option>
+                          <option value="false">Pending export</option>
+                          <option value="true">Already exported</option>
+                        </select>
+                      </div>
+                    </Field>
+
+                    {datePreset === 'custom' && (
+                      <>
+                        <Field label="From" className="lg:col-span-3">
+                          <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className={inputCls} />
+                        </Field>
+                        <Field label="To" className="lg:col-span-3">
+                          <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className={inputCls} />
+                        </Field>
+                      </>
+                    )}
                   </div>
-                )}
-              </div>
-            </div>
-          )}
+                </Panel>
 
-          {/* TAB 2: ADMIN CARS RECORD (UPDATE PRICE & PICS) */}
-          {activeTab === 'cars' && (
-            <div className="space-y-6">
-              <div className="flex flex-col gap-4 rounded-2xl border border-slate-800 bg-slate-900/90 p-5 md:flex-row md:items-center md:justify-between">
-                <div>
-                  <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                    <Car size={20} className="text-amber-400" /> Catalog & Admin Car Records
-                  </h2>
-                  <p className="mt-1 text-sm text-slate-400">
-                    Client and Admin records of all vehicles in system. Click <strong>Edit Price & Pics</strong> to update starting price, top variant price, or upload/replace photos.
-                  </p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <input
-                    type="text"
-                    placeholder="Search car name or brand..."
-                    value={carSearch}
-                    onChange={(e) => setCarSearch(e.target.value)}
-                    className="rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2 text-sm text-white outline-none focus:border-amber-400"
-                  />
-                  <select
-                    value={carSourceFilter}
-                    onChange={(e) => setCarSourceFilter(e.target.value)}
-                    className="rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2 text-sm text-white outline-none focus:border-amber-400"
-                  >
-                    <option value="manual">Admin Added</option>
-                  </select>
-                </div>
-              </div>
+                <section className="overflow-hidden rounded-2xl border border-black/10 bg-white" aria-busy={leadsLoading}>
+                  {leadsLoading ? (
+                    <div className="p-12 text-center text-black/60" role="status">Loading leads…</div>
+                  ) : leads.length === 0 ? (
+                    <div className="p-12 text-center">
+                      <p className="text-xl font-bold tracking-tight">No leads match these filters</p>
+                      <p className="mt-2 text-black/60">Widen the date range or clear the state and car filters.</p>
+                      {activeFilterCount > 0 && (
+                        <button type="button" onClick={resetLeadFilters} className={`${btnDark} mt-6`}>
+                          Reset all filters
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full text-left text-sm">
+                        <thead className="border-b border-black/10 bg-[#f4f4f4] text-black/60">
+                          <tr>
+                            <th scope="col" className="px-5 py-3.5 font-semibold">Lead</th>
+                            <th scope="col" className="px-5 py-3.5 font-semibold">Vehicle</th>
+                            <th scope="col" className="px-5 py-3.5 font-semibold">Price</th>
+                            <th scope="col" className="px-5 py-3.5 font-semibold">Source</th>
+                            <th scope="col" className="px-5 py-3.5 font-semibold">Status</th>
+                            <th scope="col" className="px-5 py-3.5"><span className="sr-only">Actions</span></th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-black/10">
+                          {leads.map((lead) => (
+                            <tr key={lead.id} className="align-top transition-colors hover:bg-black/[0.03]">
+                              <td className="px-5 py-4">
+                                <p className="font-bold">{lead.name}</p>
+                                <p className="mt-0.5 font-mono text-[#b91c1c]">{lead.phone_number}</p>
+                                <p className="mt-0.5 text-black/55">
+                                  {[lead.city, lead.state_name].filter(Boolean).join(', ') || '—'}
+                                </p>
+                              </td>
+                              <td className="px-5 py-4">
+                                <p className="font-bold">{lead.vehicle_name_snapshot}</p>
+                                <p className="mt-0.5 text-black/55">{lead.brand_snapshot}</p>
+                              </td>
+                              <td className="whitespace-nowrap px-5 py-4">
+                                <p className="font-bold">{formatINR(lead.on_road_price_calculated)}</p>
+                                <p className="mt-0.5 text-black/55">Ex-showroom {formatINR(lead.ex_showroom_price_at_query)}</p>
+                              </td>
+                              <td className="px-5 py-4">
+                                <p>{lead.source_page || '—'}</p>
+                                <p className="mt-0.5 text-black/55">
+                                  {lead.created_at ? new Date(lead.created_at).toLocaleString('en-IN') : '—'}
+                                </p>
+                              </td>
+                              <td className="px-5 py-4"><StatusPill exported={lead.is_exported} /></td>
+                              <td className="px-5 py-4 text-right">
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteLead(lead)}
+                                  disabled={deleteLeadMutation.isPending}
+                                  className={iconBtnDanger}
+                                  aria-label={`Delete lead for ${lead.name}`}
+                                >
+                                  <Trash2 size={16} aria-hidden="true" />
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
 
-              {adminCarsLoading ? (
-                <div className="p-12 text-center text-slate-400">Loading car records...</div>
-              ) : adminCars.length === 0 ? (
-                <div className="p-12 text-center text-slate-400">No cars found matching search criteria.</div>
-              ) : (
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                  {adminCars.map((car) => {
-                    const primaryImg = toAppMediaUrl(car.primary_image);
-                    const startPrice = car.starting_price || car.ex_showroom_price;
-                    return (
-                      <div
-                        key={car.id}
-                        className="group flex flex-col justify-between overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 p-5 shadow-lg transition hover:border-slate-700"
-                      >
-                        <div className="space-y-4">
-                          {/* Image Thumbnail */}
-                          <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-slate-950">
+                  {!leadsLoading && leads.length > 0 && (
+                    <div className="flex flex-col items-start justify-between gap-3 border-t border-black/10 px-5 py-4 text-sm sm:flex-row sm:items-center">
+                      <span className="text-black/60">
+                        Page <strong className="text-black">{leadPage}</strong> of <strong className="text-black">{leadPageCount}</strong> · {leadCount} total leads
+                      </span>
+                      <div className="flex gap-2">
+                        <button type="button" disabled={leadPage === 1} onClick={() => setLeadPage((page) => page - 1)} className={`${btnGhost} px-4 py-2 disabled:opacity-40`}>
+                          Previous
+                        </button>
+                        <button type="button" disabled={leadPage === leadPageCount} onClick={() => setLeadPage((page) => page + 1)} className={`${btnGhost} px-4 py-2 disabled:opacity-40`}>
+                          Next
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </section>
+              </>
+            )}
+
+            {/* ===== CARS ===== */}
+            {activeTab === 'cars' && (
+              <>
+                <div className="flex flex-col gap-3 sm:flex-row">
+                  <div className="relative flex-1">
+                    <label htmlFor="car-search" className="sr-only">Search cars</label>
+                    <Search size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-black/40" aria-hidden="true" />
+                    <input
+                      id="car-search"
+                      type="search"
+                      placeholder="Search by car name or brand"
+                      value={carSearch}
+                      onChange={(e) => setCarSearch(e.target.value)}
+                      className={`${inputCls} pl-10`}
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="car-source" className="sr-only">Data source</label>
+                    <select
+                      id="car-source"
+                      value={carSourceFilter}
+                      onChange={(e) => setCarSourceFilter(e.target.value)}
+                      className={`${inputCls} sm:w-48`}
+                    >
+                      <option value="all">All sources</option>
+                      <option value="manual">Admin added</option>
+                    </select>
+                  </div>
+                </div>
+
+                {adminCarsLoading ? (
+                  <div className="rounded-2xl border border-black/10 bg-white p-12 text-center text-black/60" role="status">
+                    Loading cars…
+                  </div>
+                ) : adminCars.length === 0 ? (
+                  <div className="rounded-2xl border border-black/10 bg-white p-12 text-center">
+                    <p className="text-xl font-bold tracking-tight">No cars found</p>
+                    <p className="mt-2 text-black/60">Try a different search, or add a new car.</p>
+                  </div>
+                ) : (
+                  <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+                    {adminCars.map((car) => {
+                      const primaryImg = toAppMediaUrl(car.primary_image);
+                      const startPrice = car.starting_price || car.ex_showroom_price;
+                      return (
+                        <article key={car.id} className="group flex flex-col overflow-hidden rounded-2xl border border-black/10 bg-white">
+                          <div className="relative aspect-[16/10] overflow-hidden bg-[#eeeeee]">
                             {primaryImg ? (
                               <img
                                 src={primaryImg}
-                                alt={car.name}
-                                className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+                                alt={`${car.brand_name || car.brand?.name || ''} ${car.name}`}
+                                className="h-full w-full object-cover motion-safe:transition-transform motion-safe:duration-500 motion-safe:group-hover:scale-105"
+                                loading="lazy"
                               />
                             ) : (
-                              <div className="flex h-full w-full flex-col items-center justify-center text-slate-600">
-                                <ImageIcon size={32} />
-                                <span className="mt-1 text-xs">No picture</span>
+                              <div className="flex h-full w-full flex-col items-center justify-center text-black/35">
+                                <ImageIcon size={32} aria-hidden="true" />
+                                <span className="mt-1 text-sm">No photo yet</span>
                               </div>
                             )}
-                            <div className="absolute top-2 right-2 flex gap-1">
+                            <div className="absolute left-3 top-3 flex gap-2">
                               {car.is_featured && (
-                                <span className="rounded-md bg-amber-500/90 px-2 py-0.5 text-xs font-bold text-slate-950 shadow">
-                                  Featured
-                                </span>
+                                <span className="rounded-full bg-black px-2.5 py-1 text-xs font-bold text-white">Featured</span>
                               )}
                               {car.is_tba && (
-                                <span className="rounded-md bg-purple-500/90 px-2 py-0.5 text-xs font-bold text-white shadow">
-                                  TBA
-                                </span>
+                                <span className="rounded-full bg-white px-2.5 py-1 text-xs font-bold text-black">TBA</span>
+                              )}
+                              {car.is_active === false && (
+                                <span className="rounded-full bg-[#dc2626] px-2.5 py-1 text-xs font-bold text-white">Hidden</span>
                               )}
                             </div>
                           </div>
 
-                          {/* Car Info */}
-                          <div>
-                            <p className="text-xs font-semibold uppercase tracking-wider text-amber-400">
-                              {car.brand_name || car.brand?.name}
-                            </p>
-                            <h3 className="mt-1 text-xl font-bold text-white">{car.name}</h3>
-                            <div className="mt-2 flex flex-wrap gap-2 text-xs text-slate-300">
-                              <span className="rounded-md bg-slate-800 px-2.5 py-1">{car.body_type}</span>
-                              <span className="rounded-md bg-slate-800 px-2.5 py-1">{car.fuel_type}</span>
-                              {car.ev_hybrid_cng_flag !== 'No' && (
-                                <span className="rounded-md bg-emerald-500/20 text-emerald-300 px-2 py-1 font-semibold">
-                                  {car.ev_hybrid_cng_flag}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Prices */}
-                          <div className="rounded-xl bg-slate-950/80 p-3 text-sm space-y-1 border border-slate-800/80">
-                            <div className="flex justify-between text-slate-300">
-                              <span className="text-xs text-slate-400">Starting Price:</span>
-                              <span className="font-bold text-white">
-                                {startPrice ? `₹ ${Number(startPrice).toLocaleString('en-IN')}` : 'TBA'}
-                              </span>
-                            </div>
-                            {car.top_variant_price && (
-                              <div className="flex justify-between text-slate-300">
-                                <span className="text-xs text-slate-400">Top Variant:</span>
-                                <span className="font-semibold text-slate-200">
-                                  ₹ {Number(car.top_variant_price).toLocaleString('en-IN')}
-                                </span>
+                          <div className="flex flex-1 flex-col gap-4 p-5">
+                            <div>
+                              <p className="text-sm font-medium text-black/55">{car.brand_name || car.brand?.name}</p>
+                              <h3 className="mt-0.5 text-xl font-extrabold tracking-tight">{car.name}</h3>
+                              <div className="mt-3 flex flex-wrap gap-2 text-xs font-medium">
+                                {car.body_type && <span className="rounded-full bg-[#eeeeee] px-3 py-1">{car.body_type}</span>}
+                                {car.fuel_type && <span className="rounded-full bg-[#eeeeee] px-3 py-1">{car.fuel_type}</span>}
+                                {car.ev_hybrid_cng_flag && car.ev_hybrid_cng_flag !== 'No' && (
+                                  <span className="rounded-full bg-green-50 px-3 py-1 text-green-700">{car.ev_hybrid_cng_flag}</span>
+                                )}
                               </div>
-                            )}
-                          </div>
-                        </div>
+                            </div>
 
-                        {/* Actions */}
-                        <div className="mt-5 flex items-center justify-between border-t border-slate-800/80 pt-4 gap-2">
-                          <Link
-                            to={`/vehicles/${car.slug}`}
-                            target="_blank"
-                            className="flex items-center gap-1 text-xs text-slate-400 hover:text-white transition"
-                          >
-                            <Eye size={14} /> View
-                          </Link>
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => startEditingVehicle(car)}
-                              className="flex items-center gap-1.5 rounded-lg bg-amber-500 px-3.5 py-1.5 text-xs font-bold text-slate-950 transition hover:bg-amber-400"
-                            >
-                              <Edit3 size={14} /> Edit Price & Pics
-                            </button>
-                            <button
-                              onClick={() => handleDeleteVehicle(car)}
-                              className="rounded-lg border border-red-500/30 p-1.5 text-red-400 hover:bg-red-500/10 transition"
-                              title="Delete Car"
-                            >
-                              <Trash2 size={14} />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          )}
+                            <dl className="space-y-1.5 rounded-xl bg-[#f4f4f4] p-3.5 text-sm">
+                              <div className="flex justify-between gap-3">
+                                <dt className="text-black/60">Starting price</dt>
+                                <dd className="font-bold">{startPrice ? formatINR(startPrice) : 'TBA'}</dd>
+                              </div>
+                              {car.top_variant_price && (
+                                <div className="flex justify-between gap-3">
+                                  <dt className="text-black/60">Top variant</dt>
+                                  <dd className="font-semibold">{formatINR(car.top_variant_price)}</dd>
+                                </div>
+                              )}
+                            </dl>
 
-          {/* TAB 3: ADD NEW CAR */}
-          {activeTab === 'add-car' && (
-            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6 space-y-6">
-              <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.25em] text-amber-400 font-semibold">Publish New Vehicle</p>
-                  <h2 className="mt-1 text-2xl font-bold text-white">Add Car to Database & Catalog</h2>
-                  <p className="mt-1 text-sm text-slate-400">
-                    Published cars will immediately become live in New Cars listing, vehicle detail pages, and the on-road calculator.
-                  </p>
-                </div>
-                {publishedVehicle && (
-                  <Link
-                    to={`/vehicles/${publishedVehicle.slug}`}
-                    className="rounded-xl bg-emerald-500 px-4 py-2 text-sm font-bold text-slate-950 hover:bg-emerald-400 transition"
-                  >
-                    View Published Car →
-                  </Link>
+                            <div className="mt-auto flex items-center justify-between gap-2 border-t border-black/10 pt-4">
+                              <Link
+                                to={`/vehicles/${car.slug}`}
+                                target="_blank"
+                                className={`inline-flex items-center gap-1.5 rounded-sm text-sm font-semibold text-black/65 hover:text-black ${focusRing}`}
+                              >
+                                <Eye size={15} aria-hidden="true" /> View
+                              </Link>
+                              <div className="flex gap-2">
+                                <button type="button" onClick={() => startEditingVehicle(car)} className={`${btnDark} px-3.5 py-2`}>
+                                  <Edit3 size={14} aria-hidden="true" /> Edit
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteVehicle(car)}
+                                  className={iconBtnDanger}
+                                  aria-label={`Delete ${car.name}`}
+                                >
+                                  <Trash2 size={16} aria-hidden="true" />
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </article>
+                      );
+                    })}
+                  </div>
                 )}
-              </div>
+              </>
+            )}
 
-              <form onSubmit={handlePublishVehicle} className="grid gap-5 lg:grid-cols-4">
-                {[
-                  ['brand_name', 'Brand Name *', 'Maruti Suzuki'],
-                  ['name', 'Car Model Name *', 'Swift'],
-                  ['body_type', 'Body Type *', 'Hatchback'],
-                  ['fuel_type', 'Fuel Type *', 'Petrol'],
-                  ['starting_price', 'Starting Price (₹)', '579000'],
-                  ['top_variant_price', 'Top Variant Price (₹)', '884000'],
-                  ['seats', 'Seating Capacity', '5'],
-                  ['transmission', 'Transmission', 'Manual/Automatic'],
-                ].map(([name, label, placeholder]) => (
-                  <label key={name} className="text-sm text-slate-300">
-                    <span className="mb-1.5 block font-medium">{label}</span>
-                    <input
-                      name={name}
-                      value={vehicleForm[name] || ''}
-                      onChange={handleVehicleField}
-                      placeholder={placeholder}
-                      required={['brand_name', 'name', 'body_type', 'fuel_type'].includes(name)}
-                      type={['starting_price', 'top_variant_price', 'seats'].includes(name) ? 'number' : 'text'}
-                      className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2.5 text-sm text-white outline-none transition focus:border-amber-400"
-                    />
-                  </label>
-                ))}
+            {/* ===== ADD CAR ===== */}
+            {activeTab === 'add-car' && (
+              <form onSubmit={handlePublishVehicle} className="grid gap-6 lg:grid-cols-[1fr_22rem]">
+                <div className="space-y-6">
+                  <Panel title="Basics" icon={Car}>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <Field label="Brand name *">
+                        <input name="brand_name" value={vehicleForm.brand_name} onChange={handleVehicleField} placeholder="Maruti Suzuki" required className={inputCls} />
+                      </Field>
+                      <Field label="Car model name *">
+                        <input name="name" value={vehicleForm.name} onChange={handleVehicleField} placeholder="Swift" required className={inputCls} />
+                      </Field>
+                      <Field label="Body type *">
+                        <input name="body_type" value={vehicleForm.body_type} onChange={handleVehicleField} placeholder="Hatchback" required className={inputCls} />
+                      </Field>
+                      <Field label="Fuel type *">
+                        <input name="fuel_type" value={vehicleForm.fuel_type} onChange={handleVehicleField} placeholder="Petrol" required className={inputCls} />
+                      </Field>
+                      <Field label="Powertrain flag">
+                        <select name="ev_hybrid_cng_flag" value={vehicleForm.ev_hybrid_cng_flag} onChange={handleVehicleField} className={inputCls}>
+                          <option value="No">No</option>
+                          <option value="EV">EV</option>
+                          <option value="Hybrid">Hybrid</option>
+                          <option value="CNG">CNG</option>
+                          <option value="Hybrid/CNG">Hybrid/CNG</option>
+                        </select>
+                      </Field>
+                      <Field label="Seating capacity">
+                        <input name="seats" type="number" value={vehicleForm.seats} onChange={handleVehicleField} placeholder="5" className={inputCls} />
+                      </Field>
+                      <Field label="Transmission" className="sm:col-span-2">
+                        <input name="transmission" value={vehicleForm.transmission} onChange={handleVehicleField} placeholder="Manual/Automatic" className={inputCls} />
+                      </Field>
+                    </div>
+                  </Panel>
 
-                <label className="text-sm text-slate-300">
-                  <span className="mb-1.5 block font-medium">Powertrain Flag</span>
-                  <select
-                    name="ev_hybrid_cng_flag"
-                    value={vehicleForm.ev_hybrid_cng_flag}
-                    onChange={handleVehicleField}
-                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2.5 text-sm text-white outline-none focus:border-amber-400"
-                  >
-                    <option value="No">No</option>
-                    <option value="EV">EV</option>
-                    <option value="Hybrid">Hybrid</option>
-                    <option value="CNG">CNG</option>
-                    <option value="Hybrid/CNG">Hybrid/CNG</option>
-                  </select>
-                </label>
+                  <Panel title="Pricing" icon={IndianRupee}>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <Field label="Starting price (₹)" hint="Also used as the ex-showroom price.">
+                        <input name="starting_price" type="number" value={vehicleForm.starting_price} onChange={handleVehicleField} placeholder="579000" className={inputCls} />
+                      </Field>
+                      <Field label="Top variant price (₹)">
+                        <input name="top_variant_price" type="number" value={vehicleForm.top_variant_price} onChange={handleVehicleField} placeholder="884000" className={inputCls} />
+                      </Field>
+                    </div>
+                  </Panel>
 
-                <label className="text-sm text-slate-300">
-                  <span className="mb-1.5 block font-medium">Front Side Image (Main Photo)</span>
-                  <input
-                    name="front_image"
-                    type="file"
-                    accept="image/*"
-                    onChange={handleVehicleImage}
-                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-300 file:mr-3 file:rounded-lg file:border-0 file:bg-amber-500 file:px-3 file:py-1.5 file:text-xs file:font-bold file:text-slate-950"
-                  />
-                </label>
+                  <Panel title="Content" icon={Tag}>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <Field label="Overview and description" className="sm:col-span-2">
+                        <textarea name="description" value={vehicleForm.description} onChange={handleVehicleField} rows={4} placeholder="Overview shown on the vehicle detail page" className={inputCls} />
+                      </Field>
+                      <Field label="Key specs (JSON)">
+                        <textarea name="key_specs" value={vehicleForm.key_specs} onChange={handleVehicleField} rows={4} placeholder={'{"engine":"1.5L Turbo","mileage":"18 kmpl"}'} className={`${inputCls} font-mono`} />
+                      </Field>
+                      <Field label="Short meta description" hint="Shown in search results.">
+                        <textarea name="meta_description" value={vehicleForm.meta_description} onChange={handleVehicleField} rows={4} placeholder="Short summary for SEO" className={inputCls} />
+                      </Field>
+                    </div>
+                  </Panel>
+                </div>
 
-                {[
-                  ['exterior_image', 'Exterior / Side View Photo'],
-                  ['interior_image', 'Interior Cabin Photo'],
-                  ['rear_image', 'Rear / Backside View Photo'],
-                ].map(([name, label]) => (
-                  <label key={name} className="text-sm text-slate-300">
-                    <span className="mb-1.5 block font-medium">{label}</span>
-                    <input
-                      name={name}
-                      type="file"
-                      accept="image/*"
-                      onChange={handleVehicleImage}
-                      className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-300 file:mr-3 file:rounded-lg file:border-0 file:bg-amber-500 file:px-3 file:py-1.5 file:text-xs file:font-bold file:text-slate-950"
-                    />
-                  </label>
-                ))}
+                <div className="space-y-6 lg:sticky lg:top-6 lg:self-start">
+                  <Panel title="Photos" icon={ImageIcon}>
+                    <div className="space-y-4">
+                      <Field label="Front view (main photo)">
+                        <input name="front_image" type="file" accept="image/*" onChange={handleVehicleImage} className={fileCls} />
+                      </Field>
+                      <Field label="Exterior / side view">
+                        <input name="exterior_image" type="file" accept="image/*" onChange={handleVehicleImage} className={fileCls} />
+                      </Field>
+                      <Field label="Interior cabin">
+                        <input name="interior_image" type="file" accept="image/*" onChange={handleVehicleImage} className={fileCls} />
+                      </Field>
+                      <Field label="Rear view">
+                        <input name="rear_image" type="file" accept="image/*" onChange={handleVehicleImage} className={fileCls} />
+                      </Field>
+                    </div>
+                  </Panel>
 
-                <label className="text-sm text-slate-300 lg:col-span-4">
-                  <span className="mb-1.5 block font-medium">Vehicle Overview & Description</span>
-                  <textarea
-                    name="description"
-                    value={vehicleForm.description}
-                    onChange={handleVehicleField}
-                    rows={4}
-                    placeholder="Detailed overview for the vehicle detail page..."
-                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2.5 text-sm text-white outline-none transition focus:border-amber-400"
-                  />
-                </label>
-
-                <label className="text-sm text-slate-300 lg:col-span-2">
-                  <span className="mb-1.5 block font-medium">Key Specs (JSON Format)</span>
-                  <textarea
-                    name="key_specs"
-                    value={vehicleForm.key_specs}
-                    onChange={handleVehicleField}
-                    rows={3}
-                    placeholder={'{"engine":"1.5L Turbo","mileage":"18 kmpl"}'}
-                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2.5 font-mono text-sm text-white outline-none transition focus:border-amber-400"
-                  />
-                </label>
-
-                <label className="text-sm text-slate-300 lg:col-span-2">
-                  <span className="mb-1.5 block font-medium">Short Meta Description</span>
-                  <textarea
-                    name="meta_description"
-                    value={vehicleForm.meta_description}
-                    onChange={handleVehicleField}
-                    rows={3}
-                    placeholder="Short client-facing summary for SEO..."
-                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2.5 text-sm text-white outline-none transition focus:border-amber-400"
-                  />
-                </label>
-
-                <div className="flex flex-wrap items-center gap-6 lg:col-span-4 border-t border-slate-800 pt-5">
-                  <label className="inline-flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      name="is_featured"
-                      checked={vehicleForm.is_featured}
-                      onChange={handleVehicleField}
-                      className="h-4 w-4 rounded border-slate-700 text-amber-500 focus:ring-amber-400"
-                    />
-                    Feature on Homepage
-                  </label>
-                  <label className="inline-flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      name="is_tba"
-                      checked={vehicleForm.is_tba}
-                      onChange={handleVehicleField}
-                      className="h-4 w-4 rounded border-slate-700 text-amber-500 focus:ring-amber-400"
-                    />
-                    Price To Be Announced (TBA)
-                  </label>
-
-                  <button
-                    disabled={publishVehicleMutation.isPending}
-                    className="rounded-xl bg-amber-500 px-6 py-3 font-bold text-slate-950 transition hover:bg-amber-400 disabled:opacity-60 shadow-lg"
-                  >
-                    {publishVehicleMutation.isPending ? 'Publishing...' : 'Publish Car to Catalog'}
-                  </button>
+                  <Panel title="Publish">
+                    <div className="space-y-3">
+                      <Toggle label="Feature on homepage" name="is_featured" checked={vehicleForm.is_featured} onChange={handleVehicleField} />
+                      <Toggle label="Price to be announced (TBA)" name="is_tba" checked={vehicleForm.is_tba} onChange={handleVehicleField} />
+                    </div>
+                    <button type="submit" disabled={publishVehicleMutation.isPending} className={`${btnPrimary} mt-6 w-full py-3`}>
+                      {publishVehicleMutation.isPending ? 'Publishing…' : 'Publish car to catalog'}
+                    </button>
+                  </Panel>
                 </div>
               </form>
-            </div>
-          )}
-
-        </div>
+            )}
+          </div>
+        </main>
       </div>
 
-      {/* EDIT CAR MODAL (PRICE & PICS EDITOR) */}
+      {/* TOAST */}
+      {toast && (
+        <div
+          role="status"
+          aria-live="polite"
+          className={`fixed bottom-5 right-5 z-[60] flex max-w-sm items-start gap-3 rounded-2xl px-5 py-4 text-sm font-semibold text-white shadow-2xl ${
+            toast.tone === 'error' ? 'bg-[#dc2626]' : 'bg-black'
+          }`}
+        >
+          {toast.tone === 'error' ? <X size={18} className="mt-0.5 shrink-0" aria-hidden="true" /> : <Check size={18} className="mt-0.5 shrink-0" aria-hidden="true" />}
+          <span>{toast.message}</span>
+        </div>
+      )}
+
+      {/* EDIT DRAWER */}
       {editingVehicle && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm overflow-y-auto">
-          <div className="relative my-8 w-full max-w-3xl rounded-3xl border border-slate-800 bg-slate-900 p-6 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+        <div className="fixed inset-0 z-50 flex justify-end">
+          <button
+            type="button"
+            aria-label="Close editor"
+            onClick={() => setEditingVehicle(null)}
+            className="absolute inset-0 cursor-default bg-black/50 backdrop-blur-sm"
+          />
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="edit-car-title"
+            className="relative flex h-full w-full max-w-3xl flex-col bg-[#f4f4f4] shadow-2xl"
+          >
+            <div className="flex items-start justify-between gap-4 border-b border-black/10 bg-white px-6 py-5">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
-                  <Edit3 size={14} /> Update Price & Pictures
-                </p>
-                <h3 className="mt-1 text-2xl font-bold text-white">
-                  Edit {editingVehicle.brand_name || editingVehicle.brand?.name} {editingVehicle.name}
-                </h3>
+                <p className="text-sm font-medium text-black/55">Edit car</p>
+                <h2 id="edit-car-title" className="text-2xl font-extrabold tracking-tight">
+                  {editingVehicle.brand_name || editingVehicle.brand?.name} {editingVehicle.name}
+                </h2>
               </div>
               <button
+                type="button"
                 onClick={() => setEditingVehicle(null)}
-                className="rounded-xl border border-slate-700 p-2 text-slate-400 hover:bg-slate-800 hover:text-white transition"
+                aria-label="Close editor"
+                className={`rounded-full border border-black/15 p-2.5 hover:bg-black/5 ${focusRing}`}
               >
-                <X size={20} />
+                <X size={18} aria-hidden="true" />
               </button>
             </div>
 
-            <form onSubmit={handleSaveVehicleEdit} className="space-y-6">
-              {/* Prices Section */}
-              <div className="rounded-2xl bg-slate-950 p-4 border border-slate-800 space-y-4">
-                <h4 className="text-sm font-bold text-amber-300 flex items-center gap-1.5">
-                  <DollarSign size={16} /> Update Car Prices (INR)
-                </h4>
-                <div className="grid gap-4 sm:grid-cols-3">
-                  <div>
-                    <label className="mb-1 block text-xs text-slate-400">Starting Ex-Showroom Price</label>
-                    <input
-                      type="number"
-                      name="starting_price"
-                      value={editForm.starting_price || ''}
-                      onChange={handleEditField}
-                      placeholder="e.g. 600000"
-                      className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:border-amber-400"
-                    />
+            <form onSubmit={handleSaveVehicleEdit} className="flex min-h-0 flex-1 flex-col">
+              <div className="flex-1 space-y-5 overflow-y-auto px-6 py-6">
+                <Panel title="Prices (₹)" icon={IndianRupee}>
+                  <div className="grid gap-4 sm:grid-cols-3">
+                    <Field label="Starting ex-showroom">
+                      <input type="number" name="starting_price" value={editForm.starting_price || ''} onChange={handleEditField} placeholder="600000" className={inputCls} />
+                    </Field>
+                    <Field label="Top variant">
+                      <input type="number" name="top_variant_price" value={editForm.top_variant_price || ''} onChange={handleEditField} placeholder="950000" className={inputCls} />
+                    </Field>
+                    <Field label="Ex-showroom (alias)" hint="Stays in sync with starting price.">
+                      <input type="number" name="ex_showroom_price" value={editForm.ex_showroom_price || ''} onChange={handleEditField} placeholder="600000" className={inputCls} />
+                    </Field>
                   </div>
-                  <div>
-                    <label className="mb-1 block text-xs text-slate-400">Top Variant Price</label>
-                    <input
-                      type="number"
-                      name="top_variant_price"
-                      value={editForm.top_variant_price || ''}
-                      onChange={handleEditField}
-                      placeholder="e.g. 950000"
-                      className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:border-amber-400"
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-xs text-slate-400">Ex-Showroom Price (Alias)</label>
-                    <input
-                      type="number"
-                      name="ex_showroom_price"
-                      value={editForm.ex_showroom_price || ''}
-                      onChange={handleEditField}
-                      placeholder="e.g. 600000"
-                      className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:border-amber-400"
-                    />
-                  </div>
-                </div>
-              </div>
+                </Panel>
 
-              {/* Variants Section */}
-              <div className="rounded-2xl bg-slate-950 p-4 border border-slate-800 space-y-4">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-sm font-bold text-amber-300 flex items-center gap-1.5">
-                    <Tag size={16} /> Trim Variants &amp; Prices ({editVariants.filter(v => !v.delete).length})
-                  </h4>
-                  <button
-                    type="button"
-                    onClick={handleAddVariantInEdit}
-                    className="flex items-center gap-1 text-xs font-bold text-slate-950 bg-amber-400 hover:bg-amber-300 px-3 py-1.5 rounded-lg transition"
-                  >
-                    <Plus size={14} /> Add Variant
-                  </button>
-                </div>
-
-                <div className="space-y-3 max-h-60 overflow-y-auto pr-1">
-                  {editVariants.map((varItem, idx) => {
-                    if (varItem.delete) return null;
-                    return (
-                      <div key={varItem.id || `new-${idx}`} className="flex flex-wrap sm:flex-nowrap items-center gap-2 rounded-xl border border-slate-800 bg-slate-900 p-2.5">
-                        <input
-                          type="text"
-                          placeholder="Variant Name (e.g. LXi 1.2)"
-                          value={varItem.variant_name || ''}
-                          onChange={(e) => handleVariantChangeInEdit(idx, 'variant_name', e.target.value)}
-                          className="flex-1 min-w-[140px] rounded-lg border border-slate-700 bg-slate-950 px-2.5 py-1.5 text-xs text-white outline-none focus:border-amber-400"
-                        />
-                        <input
-                          type="number"
-                          placeholder="Ex-Showroom (₹)"
-                          value={varItem.ex_showroom_price || ''}
-                          onChange={(e) => handleVariantChangeInEdit(idx, 'ex_showroom_price', e.target.value)}
-                          className="w-28 rounded-lg border border-slate-700 bg-slate-950 px-2.5 py-1.5 text-xs text-white outline-none focus:border-amber-400"
-                        />
-                        <input
-                          type="text"
-                          placeholder="Fuel (Petrol/EV)"
-                          value={varItem.fuel_type || ''}
-                          onChange={(e) => handleVariantChangeInEdit(idx, 'fuel_type', e.target.value)}
-                          className="w-24 rounded-lg border border-slate-700 bg-slate-950 px-2.5 py-1.5 text-xs text-white outline-none focus:border-amber-400"
-                        />
-                        <input
-                          type="text"
-                          placeholder="Transmission"
-                          value={varItem.transmission || ''}
-                          onChange={(e) => handleVariantChangeInEdit(idx, 'transmission', e.target.value)}
-                          className="w-24 rounded-lg border border-slate-700 bg-slate-950 px-2.5 py-1.5 text-xs text-white outline-none focus:border-amber-400"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveVariantInEdit(idx)}
-                          className="p-1.5 text-red-400 hover:bg-red-500/10 rounded-lg transition"
-                          title="Remove Variant"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                    );
-                  })}
-                  {editVariants.filter(v => !v.delete).length === 0 && (
-                    <p className="text-xs text-slate-500 italic text-center py-2">No variants created yet. Click "+ Add Variant" to add specific trims.</p>
-                  )}
-                </div>
-              </div>
-
-              {/* Upload & Update Pictures Section */}
-              <div className="rounded-2xl bg-slate-950 p-4 border border-slate-800 space-y-4">
-                <h4 className="text-sm font-bold text-amber-300 flex items-center gap-1.5">
-                  <ImageIcon size={16} /> Update Car Pictures / Upload New Photos
-                </h4>
-                
-                {/* Current Images Preview */}
-                {editingVehicle.images && editingVehicle.images.length > 0 && (
-                  <div>
-                    <span className="mb-2 block text-xs text-slate-400">Current Car Photos:</span>
-                    <div className="flex flex-wrap gap-3">
-                      {editingVehicle.images.map((img) => (
-                        <div key={img.id} className="relative h-20 w-32 overflow-hidden rounded-lg border border-slate-700 bg-slate-900">
-                          <img src={toAppMediaUrl(img.image_url)} alt={img.image_type} className="h-full w-full object-cover" />
-                          <span className="absolute bottom-1 left-1 rounded bg-slate-950/80 px-1.5 py-0.5 text-[10px] uppercase font-bold text-amber-300">
-                            {img.image_type}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div>
-                    <label className="mb-1 block text-xs font-medium text-slate-300">Front View / Main Photo</label>
-                    <input
-                      type="file"
-                      name="front_image"
-                      accept="image/*"
-                      onChange={handleEditImageChange}
-                      className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-slate-300 file:mr-2 file:rounded-md file:border-0 file:bg-amber-500 file:px-2.5 file:py-1 file:text-xs file:font-bold file:text-slate-950"
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-xs font-medium text-slate-300">Exterior Side View Photo</label>
-                    <input
-                      type="file"
-                      name="exterior_image"
-                      accept="image/*"
-                      onChange={handleEditImageChange}
-                      className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-slate-300 file:mr-2 file:rounded-md file:border-0 file:bg-amber-500 file:px-2.5 file:py-1 file:text-xs file:font-bold file:text-slate-950"
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-xs font-medium text-slate-300">Interior Cabin Photo</label>
-                    <input
-                      type="file"
-                      name="interior_image"
-                      accept="image/*"
-                      onChange={handleEditImageChange}
-                      className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-slate-300 file:mr-2 file:rounded-md file:border-0 file:bg-amber-500 file:px-2.5 file:py-1 file:text-xs file:font-bold file:text-slate-950"
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-xs font-medium text-slate-300">Rear Backside Photo</label>
-                    <input
-                      type="file"
-                      name="rear_image"
-                      accept="image/*"
-                      onChange={handleEditImageChange}
-                      className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-slate-300 file:mr-2 file:rounded-md file:border-0 file:bg-amber-500 file:px-2.5 file:py-1 file:text-xs file:font-bold file:text-slate-950"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* General Details */}
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <label className="mb-1 block text-xs text-slate-400">Car Model Name</label>
-                  <input
-                    type="text"
-                    name="name"
-                    value={editForm.name || ''}
-                    onChange={handleEditField}
-                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2 text-sm text-white outline-none focus:border-amber-400"
-                  />
-                </div>
-                <div>
-                  <label className="mb-1 block text-xs text-slate-400">Brand Name</label>
-                  <input
-                    type="text"
-                    name="brand_name"
-                    value={editForm.brand_name || ''}
-                    onChange={handleEditField}
-                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2 text-sm text-white outline-none focus:border-amber-400"
-                  />
-                </div>
-                <div>
-                  <label className="mb-1 block text-xs text-slate-400">Body Type</label>
-                  <input
-                    type="text"
-                    name="body_type"
-                    value={editForm.body_type || ''}
-                    onChange={handleEditField}
-                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2 text-sm text-white outline-none focus:border-amber-400"
-                  />
-                </div>
-                <div>
-                  <label className="mb-1 block text-xs text-slate-400">Fuel Type</label>
-                  <input
-                    type="text"
-                    name="fuel_type"
-                    value={editForm.fuel_type || ''}
-                    onChange={handleEditField}
-                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2 text-sm text-white outline-none focus:border-amber-400"
-                  />
-                </div>
-              </div>
-
-              {/* Description & Specs */}
-              <div>
-                <label className="mb-1 block text-xs text-slate-400">Overview Description</label>
-                <textarea
-                  name="description"
-                  value={editForm.description || ''}
-                  onChange={handleEditField}
-                  rows={3}
-                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2 text-sm text-white outline-none focus:border-amber-400"
-                />
-              </div>
-
-              {/* Status Toggles */}
-              <div className="flex flex-wrap gap-6 pt-2 border-t border-slate-800">
-                <label className="inline-flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    name="is_active"
-                    checked={editForm.is_active}
-                    onChange={handleEditField}
-                    className="h-4 w-4 rounded border-slate-700 text-amber-500 focus:ring-amber-400"
-                  />
-                  Active / Live on site
-                </label>
-                <label className="inline-flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    name="is_featured"
-                    checked={editForm.is_featured}
-                    onChange={handleEditField}
-                    className="h-4 w-4 rounded border-slate-700 text-amber-500 focus:ring-amber-400"
-                  />
-                  Featured on Homepage
-                </label>
-                <label className="inline-flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    name="is_tba"
-                    checked={editForm.is_tba}
-                    onChange={handleEditField}
-                    className="h-4 w-4 rounded border-slate-700 text-amber-500 focus:ring-amber-400"
-                  />
-                  Price TBA
-                </label>
-              </div>
-
-              {/* Modal Footer */}
-              <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setEditingVehicle(null)}
-                  className="rounded-xl border border-slate-700 px-5 py-2.5 text-sm font-medium text-slate-300 hover:bg-slate-800 transition"
+                <Panel
+                  title={`Variants (${visibleEditVariants.length})`}
+                  icon={Tag}
+                  action={
+                    <button type="button" onClick={handleAddVariantInEdit} className={`${btnDark} px-3.5 py-2`}>
+                      <Plus size={14} aria-hidden="true" /> Add variant
+                    </button>
+                  }
                 >
+                  <div className="space-y-3">
+                    {editVariants.map((varItem, idx) => {
+                      if (varItem.delete) return null;
+                      return (
+                        <div
+                          key={varItem.id || `new-${idx}`}
+                          className="grid items-center gap-2 rounded-xl bg-[#f4f4f4] p-3 sm:grid-cols-[2fr_1.3fr_1fr_1fr_auto]"
+                        >
+                          <input
+                            type="text"
+                            aria-label="Variant name"
+                            placeholder="Variant name (e.g. LXi 1.2)"
+                            value={varItem.variant_name || ''}
+                            onChange={(e) => handleVariantChangeInEdit(idx, 'variant_name', e.target.value)}
+                            className={inputCls}
+                          />
+                          <input
+                            type="number"
+                            aria-label="Variant ex-showroom price"
+                            placeholder="Ex-showroom (₹)"
+                            value={varItem.ex_showroom_price || ''}
+                            onChange={(e) => handleVariantChangeInEdit(idx, 'ex_showroom_price', e.target.value)}
+                            className={inputCls}
+                          />
+                          <input
+                            type="text"
+                            aria-label="Variant fuel type"
+                            placeholder="Fuel"
+                            value={varItem.fuel_type || ''}
+                            onChange={(e) => handleVariantChangeInEdit(idx, 'fuel_type', e.target.value)}
+                            className={inputCls}
+                          />
+                          <input
+                            type="text"
+                            aria-label="Variant transmission"
+                            placeholder="Transmission"
+                            value={varItem.transmission || ''}
+                            onChange={(e) => handleVariantChangeInEdit(idx, 'transmission', e.target.value)}
+                            className={inputCls}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveVariantInEdit(idx)}
+                            className={`${iconBtnDanger} justify-self-end`}
+                            aria-label="Remove variant"
+                          >
+                            <Trash2 size={16} aria-hidden="true" />
+                          </button>
+                        </div>
+                      );
+                    })}
+                    {visibleEditVariants.length === 0 && (
+                      <p className="py-3 text-center text-sm text-black/55">
+                        No variants yet. Use “Add variant” to add specific trims.
+                      </p>
+                    )}
+                  </div>
+                </Panel>
+
+                <Panel title="Photos" icon={ImageIcon}>
+                  {editingVehicle.images && editingVehicle.images.length > 0 && (
+                    <div className="mb-5">
+                      <p className="mb-2 text-sm font-medium text-black/70">Current photos</p>
+                      <div className="flex flex-wrap gap-3">
+                        {editingVehicle.images.map((img) => (
+                          <div key={img.id} className="relative h-20 w-32 overflow-hidden rounded-lg bg-[#eeeeee]">
+                            <img src={toAppMediaUrl(img.image_url)} alt={img.image_type} className="h-full w-full object-cover" />
+                            <span className="absolute bottom-1 left-1 rounded bg-black/75 px-1.5 py-0.5 text-[10px] font-bold text-white">
+                              {img.image_type}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <Field label="Front view / main photo">
+                      <input type="file" name="front_image" accept="image/*" onChange={handleEditImageChange} className={fileCls} />
+                    </Field>
+                    <Field label="Exterior side view">
+                      <input type="file" name="exterior_image" accept="image/*" onChange={handleEditImageChange} className={fileCls} />
+                    </Field>
+                    <Field label="Interior cabin">
+                      <input type="file" name="interior_image" accept="image/*" onChange={handleEditImageChange} className={fileCls} />
+                    </Field>
+                    <Field label="Rear view">
+                      <input type="file" name="rear_image" accept="image/*" onChange={handleEditImageChange} className={fileCls} />
+                    </Field>
+                  </div>
+                </Panel>
+
+                <Panel title="Details" icon={Car}>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <Field label="Car model name">
+                      <input type="text" name="name" value={editForm.name || ''} onChange={handleEditField} className={inputCls} />
+                    </Field>
+                    <Field label="Brand name">
+                      <input type="text" name="brand_name" value={editForm.brand_name || ''} onChange={handleEditField} className={inputCls} />
+                    </Field>
+                    <Field label="Body type">
+                      <input type="text" name="body_type" value={editForm.body_type || ''} onChange={handleEditField} className={inputCls} />
+                    </Field>
+                    <Field label="Fuel type">
+                      <input type="text" name="fuel_type" value={editForm.fuel_type || ''} onChange={handleEditField} className={inputCls} />
+                    </Field>
+                    <Field label="Overview description" className="sm:col-span-2">
+                      <textarea name="description" value={editForm.description || ''} onChange={handleEditField} rows={4} className={inputCls} />
+                    </Field>
+                  </div>
+
+                  <div className="mt-5 flex flex-wrap gap-x-8 gap-y-3 border-t border-black/10 pt-5">
+                    <Toggle label="Active (live on site)" name="is_active" checked={Boolean(editForm.is_active)} onChange={handleEditField} />
+                    <Toggle label="Featured on homepage" name="is_featured" checked={Boolean(editForm.is_featured)} onChange={handleEditField} />
+                    <Toggle label="Price TBA" name="is_tba" checked={Boolean(editForm.is_tba)} onChange={handleEditField} />
+                  </div>
+                </Panel>
+              </div>
+
+              <div className="flex justify-end gap-3 border-t border-black/10 bg-white px-6 py-4">
+                <button type="button" onClick={() => setEditingVehicle(null)} className={btnGhost}>
                   Cancel
                 </button>
-                <button
-                  type="submit"
-                  disabled={updateVehicleMutation.isPending}
-                  className="rounded-xl bg-amber-500 px-6 py-2.5 text-sm font-bold text-slate-950 hover:bg-amber-400 transition disabled:opacity-60 shadow-lg"
-                >
-                  {updateVehicleMutation.isPending ? 'Saving...' : 'Save Changes'}
+                <button type="submit" disabled={updateVehicleMutation.isPending} className={btnPrimary}>
+                  {updateVehicleMutation.isPending ? 'Saving…' : 'Save changes'}
                 </button>
               </div>
             </form>
