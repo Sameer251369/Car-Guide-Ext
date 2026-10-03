@@ -18,21 +18,6 @@ import api from '../api/client';
 import HeroMedia from '../components/HeroMedia';
 import SEOHead from '../components/SEOHead';
 
-/*
-  Car Guide Media: homepage, automotive redesign.
-  Same data source (api.getVehicles), same routes, same ?search= behaviour.
-
-  Concept: the page is an instrument cluster on a night drive.
-  - Asphalt  #0d0e10   base
-  - Steel    #1a1c20   panels
-  - Chalk    #f1efea   light surfaces / lane paint
-  - Signal   #dc2626   brand red (CTAs, racing stripe, redline)
-  - Beam     #f6c945   headlight amber (needle, plate, price highlights)
-  Type: Barlow Condensed (italic, heavy) for display, Barlow for text.
-  Memorable moment: the headline over the hero imagery, with a number-plate search box.
-  One motion moment: the price gauge needle sweeping when it scrolls into view.
-*/
-
 const ROUTES = { vehicles: '/vehicles', calculator: '/calculator', compare: '/compare' };
 
 const categories = [
@@ -61,14 +46,12 @@ const body = { fontFamily: "'Barlow','Inter',system-ui,sans-serif" };
 
 const focusRing =
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f6c945] focus-visible:ring-offset-2';
-// Slanted "racing" button: skewed container, un-skewed label.
 const slant = { clipPath: 'polygon(14px 0, 100% 0, calc(100% - 14px) 100%, 0 100%)' };
 const btnBase = `inline-flex h-14 items-center justify-center gap-2 px-9 text-lg font-bold italic tracking-wide transition-colors ${focusRing}`;
 const btnPrimary = `${btnBase} bg-[#dc2626] text-white hover:bg-[#f6c945] hover:text-[#0d0e10] focus-visible:ring-offset-[#0d0e10]`;
 const btnGhost = `${btnBase} bg-white/10 text-white backdrop-blur-md hover:bg-white hover:text-[#0d0e10] focus-visible:ring-offset-[#0d0e10]`;
 const btnLight = `${btnBase} bg-[#0d0e10] text-white hover:bg-[#dc2626] focus-visible:ring-offset-[#f1efea]`;
 
-// ---- helpers (defensive: field names are read with fallbacks, nothing is invented) ----
 const toNumber = (v) => Number(v?.starting_price ?? v?.ex_showroom_price);
 
 const formatPrice = (value) => {
@@ -92,7 +75,6 @@ const pick = (obj, keys) => {
 const vehicleImage = (v) =>
   pick(v, ['image', 'primary_image', 'thumbnail', 'main_image', 'hero_image', 'image_url']);
 
-// Fires once when the element scrolls into view.
 function useInView(threshold = 0.35) {
   const ref = useRef(null);
   const [seen, setSeen] = useState(false);
@@ -117,7 +99,6 @@ function useInView(threshold = 0.35) {
   return [ref, seen];
 }
 
-// ---- Gauge ----
 const polar = (cx, cy, r, deg) => {
   const a = (deg * Math.PI) / 180;
   return [cx + r * Math.sin(a), cy - r * Math.cos(a)];
@@ -238,6 +219,16 @@ function PopularCard({ vehicle }) {
 export default function Home() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
+  
+  const dynamicWords = ['SUVs.', 'Sedans.', 'Electric.', 'Real Prices.'];
+  const [wordIndex, setWordIndex] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setWordIndex((prev) => (prev + 1) % dynamicWords.length);
+    }, 2500);
+    return () => clearInterval(interval);
+  }, []);
 
   const { data: vehiclesData, isLoading, isError, refetch } = useQuery({
     queryKey: ['home-vehicles', 'popular'],
@@ -249,12 +240,11 @@ export default function Home() {
       Array.isArray(vehiclesData?.results)
         ? vehiclesData.results
         : Array.isArray(vehiclesData)
-          ? vehiclesData
-          : [],
+        ? vehiclesData
+        : [],
     [vehiclesData],
   );
 
-  // Uses an existing popular/featured flag if the API provides one, otherwise the first 8 returned.
   const popular = useMemo(() => {
     const flagged = allVehicles.filter((v) => v.is_popular || v.is_featured || v.featured || v.popular);
     const source = flagged.length >= 4 ? flagged : allVehicles.filter((v) => Number.isFinite(toNumber(v)));
@@ -272,7 +262,6 @@ export default function Home() {
 
   return (
     <div className="bg-[#0d0e10] text-[#f1efea]" style={body}>
-      {/* Add once to index.html (or keep this @import): Barlow + Barlow Condensed */}
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@1,700;1,800;1,900&family=Barlow:wght@400;500;600&display=swap');`}</style>
 
       <SEOHead
@@ -280,64 +269,66 @@ export default function Home() {
         description="Explore cars, compare specifications, discover variants, and calculate the on-road price for your state — all in one place."
       />
 
-      {/* HERO */}
+      {/* HERO SECTION - Text positioned higher up, search & buttons near the bottom */}
       <section className="relative overflow-hidden bg-[#0d0e10] text-white" aria-labelledby="home-hero-title">
         <HeroMedia>
-          <div className={`relative flex min-h-[92vh] flex-col justify-end gap-9 pb-14 pt-28 lg:pb-20 lg:pt-36 ${container}`}>
-            <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#0d0e10] via-[#0d0e10]/55 to-[#0d0e10]/10" />
+          <div className={`relative flex min-h-[100svh] flex-col justify-between pb-12 pt-28 ${container}`}>
+            {/* Subtle bottom gradient only for inputs legibility */}
+            <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-[#0d0e10]/80 via-transparent to-transparent" />
 
-            <div className="relative max-w-[1100px]">
+            {/* Upper part: Dynamic Title moved higher up */}
+            <div className="relative w-full max-w-[720px] pt-4">
               <h1
                 id="home-hero-title"
-                className="text-[clamp(3.5rem,11vw,10rem)] font-black italic leading-[0.86] tracking-[-0.015em]"
+                className="text-[clamp(2.75rem,min(8vw,10vh),6rem)] font-black italic leading-[0.9] tracking-[-0.015em]"
                 style={display}
               >
-                Find your car.
-                <br />
-                <span className="text-[#f1efea]/90">Know the real price.</span>
+                Find your drive. <br />
+                <span className="text-[#f6c945] transition-all duration-500">
+                  {dynamicWords[wordIndex]}
+                </span>
               </h1>
-              <p className="mt-6 max-w-[52ch] text-lg leading-snug text-white/80 sm:text-xl">
-                Explore cars, compare specifications, discover variants, and calculate the on-road price for your state, all in one place.
-              </p>
             </div>
 
-            {/* number-plate search */}
-            <form onSubmit={handleSearch} role="search" className="relative max-w-[780px]">
-              <label htmlFor="home-search" className="sr-only">Search for a car, brand or model</label>
-              <div className="flex items-stretch overflow-hidden rounded-lg border-[3px] border-[#0d0e10] bg-[#f6f3e7] shadow-[0_30px_80px_-24px_rgba(0,0,0,0.9)] ring-2 ring-white/20">
-                <span className="flex w-12 shrink-0 flex-col items-center justify-center bg-[#1d3f9e] text-[10px] font-bold leading-tight text-white" aria-hidden="true">
-                  <span className="mb-0.5 h-3 w-3 rounded-full border border-dashed border-[#f6c945]" />
-                  IND
-                </span>
-                <input
-                  id="home-search"
-                  type="search"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search any car, brand or model"
-                  className="h-16 min-w-0 flex-1 bg-transparent px-4 text-2xl font-bold italic tracking-wide text-[#0d0e10] placeholder:text-[#0d0e10]/40 focus:outline-none sm:text-3xl"
-                  style={display}
-                />
-                <button
-                  type="submit"
-                  className={`flex shrink-0 items-center gap-2 bg-[#dc2626] px-6 text-lg font-bold italic text-white transition-colors hover:bg-[#0d0e10] ${focusRing} focus-visible:ring-inset`}
-                  style={display}
-                >
-                  <Search className="h-5 w-5" aria-hidden="true" />
-                  Search
-                </button>
-              </div>
-            </form>
+            {/* Lower part: Search box and action buttons pinned lower down */}
+            <div className="relative w-full max-w-[720px] pb-4">
+              <form onSubmit={handleSearch} role="search">
+                <label htmlFor="home-search" className="sr-only">Search for a car, brand or model</label>
+                <div className="flex h-14 items-stretch overflow-hidden rounded-md bg-[#f6f3e7] shadow-[0_20px_50px_-15px_rgba(0,0,0,0.8)]">
+                  <span className="flex w-11 shrink-0 flex-col items-center justify-center bg-[#1d3f9e] text-[10px] font-bold leading-tight text-white" aria-hidden="true">
+                    <span className="mb-0.5 h-2.5 w-2.5 rounded-full border border-dashed border-[#f6c945]" />
+                    IND
+                  </span>
+                  <input
+                    id="home-search"
+                    type="search"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search car, brand or model..."
+                    className="h-full min-w-0 flex-1 bg-transparent px-4 text-xl font-bold italic tracking-wide text-[#0d0e10] placeholder:text-[#0d0e10]/40 focus:outline-none sm:text-2xl"
+                    style={display}
+                  />
+                  <button
+                    type="submit"
+                    className={`flex shrink-0 items-center gap-2 bg-[#dc2626] px-5 text-lg font-bold italic text-white transition-colors hover:bg-[#0d0e10] sm:px-7 ${focusRing} focus-visible:ring-inset`}
+                    style={display}
+                  >
+                    <Search className="h-5 w-5" aria-hidden="true" />
+                    <span className="hidden sm:inline">Search</span>
+                  </button>
+                </div>
+              </form>
 
-            <div className="relative flex flex-col gap-3 sm:flex-row">
-              <Link to={ROUTES.vehicles} className={btnPrimary} style={{ ...slant, ...display }}>
-                Explore cars
-                <ArrowUpRight className="h-5 w-5" aria-hidden="true" />
-              </Link>
-              <Link to={ROUTES.calculator} className={btnGhost} style={{ ...slant, ...display }}>
-                <Calculator className="h-5 w-5" aria-hidden="true" />
-                Calculate on-road price
-              </Link>
+              <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+                <Link to={ROUTES.vehicles} className={`${btnPrimary} w-full sm:flex-1`} style={{ ...slant, ...display }}>
+                  Explore cars
+                  <ArrowUpRight className="h-5 w-5" aria-hidden="true" />
+                </Link>
+                <Link to={ROUTES.calculator} className={`${btnGhost} w-full sm:flex-1`} style={{ ...slant, ...display }}>
+                  <Calculator className="h-5 w-5" aria-hidden="true" />
+                  On-road price
+                </Link>
+              </div>
             </div>
           </div>
         </HeroMedia>
@@ -345,16 +336,16 @@ export default function Home() {
 
       {/* BODY STYLE STRIP */}
       <section className="border-y border-white/10 bg-[#14161a]" aria-labelledby="explore-title">
-        <div className={`${container} py-10 sm:py-12`}>
-          <h2 id="explore-title" className={`text-4xl sm:text-5xl ${h2}`} style={display}>
+        <div className={`${container} py-8 sm:py-10`}>
+          <h2 id="explore-title" className={`text-3xl sm:text-4xl ${h2}`} style={display}>
             Pick your lane
           </h2>
-          <ul className="mt-6 flex gap-3 overflow-x-auto pb-2 [scrollbar-width:none] sm:flex-wrap sm:overflow-visible">
+          <ul className="mt-5 flex gap-3 overflow-x-auto pb-2 [scrollbar-width:none] sm:flex-wrap sm:overflow-visible">
             {categories.map((c) => (
               <li key={c.label} className="shrink-0">
                 <Link
                   to={c.to}
-                  className={`group flex h-14 items-center gap-3 border border-white/20 px-6 text-2xl font-bold italic transition-colors hover:border-[#dc2626] hover:bg-[#dc2626] ${focusRing} focus-visible:ring-offset-[#14161a]`}
+                  className={`group flex h-12 items-center gap-3 border border-white/20 px-5 text-xl font-bold italic transition-colors hover:border-[#dc2626] hover:bg-[#dc2626] ${focusRing} focus-visible:ring-offset-[#14161a]`}
                   style={{ ...slant, ...display }}
                 >
                   {c.label}
@@ -366,15 +357,15 @@ export default function Home() {
       </section>
 
       {/* POPULAR CARS */}
-      <section className="py-20 sm:py-28" aria-labelledby="popular-title">
+      <section className="py-16 sm:py-24" aria-labelledby="popular-title">
         <div className={container}>
-          <header className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-            <h2 id="popular-title" className={`text-[clamp(3rem,7vw,6rem)] ${h2}`} style={display}>
+          <header className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <h2 id="popular-title" className={`text-[clamp(2.5rem,6vw,5rem)] ${h2}`} style={display}>
               Popular cars
             </h2>
             <Link
               to={ROUTES.vehicles}
-              className={`inline-flex items-center gap-1.5 rounded-sm text-xl font-bold italic underline decoration-[#dc2626] decoration-4 underline-offset-8 transition-colors hover:text-[#f6c945] ${focusRing} focus-visible:ring-offset-[#0d0e10]`}
+              className={`inline-flex items-center gap-1.5 rounded-sm text-lg font-bold italic underline decoration-[#dc2626] decoration-4 underline-offset-8 transition-colors hover:text-[#f6c945] ${focusRing} focus-visible:ring-offset-[#0d0e10]`}
               style={display}
             >
               See every car <ArrowUpRight className="h-5 w-5" aria-hidden="true" />
@@ -383,37 +374,19 @@ export default function Home() {
 
           <div aria-live="polite" aria-busy={isLoading}>
             {isLoading && (
-              <>
-                <span className="sr-only">Loading cars…</span>
-                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4" aria-hidden="true">
-                  {Array.from({ length: 8 }, (_, i) => (
-                    <div key={i} className="aspect-[4/5] bg-[#1a1c20] motion-safe:animate-pulse" />
-                  ))}
-                </div>
-              </>
-            )}
-
-            {!isLoading && isError && (
-              <div className="border border-white/15 bg-[#1a1c20] p-8 sm:p-12">
-                <h3 className="text-4xl font-extrabold italic" style={display}>Cars couldn’t load.</h3>
-                <p className="mt-2 text-white/65">Check your connection and try again, or open the full catalog.</p>
-                <div className="mt-6 flex flex-wrap gap-3">
-                  <button type="button" onClick={() => refetch()} className={btnPrimary} style={{ ...slant, ...display }}>
-                    Try again
-                  </button>
-                  <Link to={ROUTES.vehicles} className={btnGhost} style={{ ...slant, ...display }}>
-                    Browse all cars
-                  </Link>
-                </div>
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4" aria-hidden="true">
+                {Array.from({ length: 8 }, (_, i) => (
+                  <div key={i} className="aspect-[4/5] bg-[#1a1c20] motion-safe:animate-pulse" />
+                ))}
               </div>
             )}
 
-            {!isLoading && !isError && popular.length === 0 && (
-              <div className="border border-white/15 bg-[#1a1c20] p-8 sm:p-12">
-                <h3 className="text-4xl font-extrabold italic" style={display}>No cars to show yet.</h3>
-                <Link to={ROUTES.vehicles} className={`${btnPrimary} mt-6`} style={{ ...slant, ...display }}>
-                  Browse all cars
-                </Link>
+            {!isLoading && isError && (
+              <div className="border border-white/15 bg-[#1a1c20] p-8">
+                <h3 className="text-3xl font-extrabold italic" style={display}>Cars couldn’t load.</h3>
+                <button type="button" onClick={() => refetch()} className={`${btnPrimary} mt-4`} style={{ ...slant, ...display }}>
+                  Try again
+                </button>
               </div>
             )}
 
@@ -429,29 +402,16 @@ export default function Home() {
       </section>
 
       {/* ON-ROAD PRICE: gauge */}
-      <section className="relative overflow-hidden bg-[#14161a] py-20 sm:py-28" aria-labelledby="onroad-title">
-        <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_75%_50%,rgba(220,38,38,0.18),transparent_60%)]" />
+      <section className="relative overflow-hidden bg-[#14161a] py-16 sm:py-24" aria-labelledby="onroad-title">
         <div className={`${container} relative grid gap-12 lg:grid-cols-[1.1fr_1fr] lg:items-center`}>
           <div>
-            <h2 id="onroad-title" className={`text-[clamp(3rem,7.5vw,6.5rem)] ${h2}`} style={display}>
+            <h2 id="onroad-title" className={`text-[clamp(2.5rem,6vw,5.5rem)] ${h2}`} style={display}>
               Know what your car really costs
             </h2>
-            <p className="mt-5 max-w-[46ch] text-lg leading-snug text-white/75">
+            <p className="mt-4 max-w-[46ch] text-base leading-snug text-white/75 sm:text-lg">
               Calculate an estimated on-road price based on your state, city and selected variant.
             </p>
-            <dl className="mt-8 max-w-[460px] divide-y divide-white/10 border-y border-white/10 text-lg">
-              {['Ex-showroom price', 'Road tax & registration', 'Insurance', 'Other charges'].map((row) => (
-                <div key={row} className="flex items-center justify-between py-3">
-                  <dt className="text-white/75">{row}</dt>
-                  <dd className="text-[#f6c945]" aria-hidden="true">+</dd>
-                </div>
-              ))}
-              <div className="flex items-center justify-between py-3 font-bold">
-                <dt>On-road price</dt>
-                <dd className="text-[#dc2626]" aria-hidden="true">=</dd>
-              </div>
-            </dl>
-            <Link to={ROUTES.calculator} className={`${btnPrimary} mt-8`} style={{ ...slant, ...display }}>
+            <Link to={ROUTES.calculator} className={`${btnPrimary} mt-6`} style={{ ...slant, ...display }}>
               <Calculator className="h-5 w-5" aria-hidden="true" />
               Calculate on-road price
             </Link>
@@ -461,17 +421,17 @@ export default function Home() {
       </section>
 
       {/* SPECIFICATIONS */}
-      <section className="py-20 sm:py-28" aria-labelledby="specs-title">
+      <section className="py-16 sm:py-24" aria-labelledby="specs-title">
         <div className={container}>
-          <h2 id="specs-title" className={`max-w-[18ch] text-[clamp(3rem,7vw,6rem)] ${h2}`} style={display}>
-            Everything you need to know before you buy
+          <h2 id="specs-title" className={`max-w-[20ch] text-[clamp(2.5rem,6vw,5rem)] ${h2}`} style={display}>
+            Everything you need before you buy
           </h2>
-          <ul className="mt-12 grid border-l border-t border-white/12 sm:grid-cols-2 lg:grid-cols-4">
+          <ul className="mt-10 grid border-l border-t border-white/12 sm:grid-cols-2 lg:grid-cols-4">
             {specs.map(({ icon: Icon, title, text }) => (
-              <li key={title} className="group border-b border-r border-white/12 p-7 transition-colors hover:bg-[#1a1c20]">
-                <Icon className="h-8 w-8 text-[#dc2626] transition-colors group-hover:text-[#f6c945]" aria-hidden="true" />
-                <h3 className="mt-5 text-3xl font-extrabold italic leading-none" style={display}>{title}</h3>
-                <p className="mt-2 text-base leading-snug text-white/65">{text}</p>
+              <li key={title} className="group border-b border-r border-white/12 p-6 transition-colors hover:bg-[#1a1c20]">
+                <Icon className="h-7 w-7 text-[#dc2626] transition-colors group-hover:text-[#f6c945]" aria-hidden="true" />
+                <h3 className="mt-4 text-2xl font-extrabold italic leading-none" style={display}>{title}</h3>
+                <p className="mt-2 text-sm leading-snug text-white/65">{text}</p>
               </li>
             ))}
           </ul>
@@ -481,12 +441,12 @@ export default function Home() {
       {/* COMPARE: split screen */}
       <section className="relative overflow-hidden bg-[#f1efea] text-[#0d0e10]" aria-labelledby="compare-title">
         <div aria-hidden="true" className="absolute inset-y-0 right-0 hidden w-[42%] -skew-x-[14deg] translate-x-16 bg-[#dc2626] lg:block" />
-        <div className={`${container} relative flex flex-col gap-8 py-20 sm:py-24 lg:flex-row lg:items-center lg:justify-between`}>
+        <div className={`${container} relative flex flex-col gap-6 py-16 sm:py-20 lg:flex-row lg:items-center lg:justify-between`}>
           <div>
-            <h2 id="compare-title" className={`text-[clamp(3rem,7vw,6rem)] ${h2}`} style={display}>
+            <h2 id="compare-title" className={`text-[clamp(2.5rem,6vw,5.5rem)] ${h2}`} style={display}>
               Compare cars side by side
             </h2>
-            <p className="mt-4 max-w-[46ch] text-lg text-black/70">
+            <p className="mt-3 max-w-[46ch] text-base text-black/70 sm:text-lg">
               Compare prices, specifications, features and variants for two or more cars.
             </p>
           </div>
@@ -497,16 +457,13 @@ export default function Home() {
         </div>
       </section>
 
-      {/* FINAL CTA: road in perspective */}
-      <section className="relative overflow-hidden py-28 text-center sm:py-40" aria-labelledby="final-title">
+      {/* FINAL CTA */}
+      <section className="relative overflow-hidden py-20 text-center sm:py-32" aria-labelledby="final-title">
         <div className={`${container} relative`}>
-          <h2 id="final-title" className="mx-auto max-w-[12ch] text-[clamp(3.5rem,10vw,9rem)] font-black italic leading-[0.88] tracking-[-0.015em]" style={display}>
+          <h2 id="final-title" className="mx-auto max-w-[12ch] text-[clamp(3rem,8vw,7.5rem)] font-black italic leading-[0.9] tracking-[-0.015em]" style={display}>
             Your next car starts here.
           </h2>
-          <p className="mx-auto mt-6 max-w-[48ch] text-lg leading-snug text-white/75">
-            Discover the right car, understand the specifications and know the real on-road price.
-          </p>
-          <Link to={ROUTES.vehicles} className={`${btnPrimary} mt-10`} style={{ ...slant, ...display }}>
+          <Link to={ROUTES.vehicles} className={`${btnPrimary} mt-8`} style={{ ...slant, ...display }}>
             Explore cars
             <ArrowUpRight className="h-5 w-5" aria-hidden="true" />
           </Link>
