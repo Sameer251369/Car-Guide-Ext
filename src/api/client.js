@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const RENDER_ORIGIN = 'https://car-guide-engine.onrender.com';
+const RENDER_ORIGIN = 'https://car-guide-engine-hp7p.onrender.com';
 
 const stripSlash = (value) => String(value || '').replace(/\/+$/, '');
 
