@@ -8,9 +8,14 @@ import VehicleCard from '../components/VehicleCard';
 
 const listingStates = new Map();
 
-/* Cut-corner shapes (same language as the home + detail pages) */
-const CUT_LG = '[clip-path:polygon(0_0,calc(100%_-_16px)_0,100%_16px,100%_100%,16px_100%,0_calc(100%_-_16px))]';
-const CUT_SM = '[clip-path:polygon(0_0,calc(100%_-_8px)_0,100%_8px,100%_100%,8px_100%,0_calc(100%_-_8px))]';
+/* --- Shared style tokens: replace with your existing ones if you have them --- */
+const display = { fontFamily: 'var(--font-display, inherit)' };
+const slant = { clipPath: 'polygon(0 0, 100% 0, calc(100% - 12px) 100%, 0 100%)' };
+const focusRing =
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f6c945] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d0e10]';
+
+const fieldBase =
+  'h-12 w-full border bg-[#1a1c20] text-sm font-bold text-white outline-none transition-all duration-200 hover:border-[#dc2626]/70 focus:border-[#f6c945] focus:ring-2 focus:ring-[#f6c945]/30';
 
 /* Styled select with custom chevron */
 function FilterSelect({ value, onChange, children, label, active }) {
@@ -20,11 +25,15 @@ function FilterSelect({ value, onChange, children, label, active }) {
       <select
         value={value}
         onChange={onChange}
-        className={`h-12 w-full cursor-pointer appearance-none rounded-xl border bg-white pl-4 pr-10 text-sm font-bold outline-none transition-all duration-200 hover:border-red-300 focus:border-red-500 focus:ring-4 focus:ring-red-600/10 ${active ? 'border-red-500 text-red-700 bg-red-50/60' : 'border-slate-200 text-slate-700'}`}
+        className={`${fieldBase} cursor-pointer appearance-none pl-4 pr-10 [&>option]:bg-[#1a1c20] [&>option]:text-white ${active ? 'border-[#dc2626] bg-[#dc2626]/10 text-[#f6c945]' : 'border-white/15'
+          }`}
       >
         {children}
       </select>
-      <ChevronDown className={`pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 transition-transform duration-200 group-focus-within:rotate-180 ${active ? 'text-red-600' : 'text-slate-400'}`} />
+      <ChevronDown
+        className={`pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 transition-transform duration-200 group-focus-within:rotate-180 ${active ? 'text-[#f6c945]' : 'text-white/50'
+          }`}
+      />
     </label>
   );
 }
@@ -143,6 +152,9 @@ export default function Portfolio() {
     setCurrentPage(1);
   };
 
+  const pageBtn =
+    'group inline-flex h-9 items-center gap-1 border border-white/15 px-3 text-xs font-extrabold text-white transition-all hover:border-[#f6c945] hover:bg-[#f6c945] hover:text-[#0d0e10] disabled:pointer-events-none disabled:opacity-40';
+
   return (
     <>
       <SEOHead
@@ -150,46 +162,53 @@ export default function Portfolio() {
         description="Explore verified Indian car models, ex-showroom price bands, fuel types, and state-wise on-road price calculators."
       />
 
-      <div className="relative min-h-screen overflow-hidden bg-gradient-to-b from-white via-rose-50/50 to-white py-8 sm:py-10">
+      <div className="relative min-h-screen overflow-hidden bg-[#0d0e10] py-8 text-white sm:py-10">
         {/* Decorative speed panels */}
-        <div aria-hidden="true" className="pointer-events-none absolute -top-28 -right-24 h-[420px] w-[420px] -skew-x-12 bg-gradient-to-br from-red-600/10 to-transparent" />
-        <div aria-hidden="true" className="pointer-events-none absolute top-72 -left-32 h-64 w-64 -skew-x-12 bg-red-600/5" />
+        <div aria-hidden="true" className="pointer-events-none absolute -top-28 -right-24 h-[420px] w-[420px] -skew-x-12 bg-gradient-to-br from-[#dc2626]/20 to-transparent" />
+        <div aria-hidden="true" className="pointer-events-none absolute top-72 -left-32 h-64 w-64 -skew-x-12 bg-[#dc2626]/5" />
 
         <div className="relative mx-auto max-w-7xl space-y-6 px-4 sm:px-6 lg:px-8">
 
           {/* ---------- Header ---------- */}
-          <div className="relative overflow-hidden rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-[0_20px_50px_-25px_rgba(15,23,42,0.25)]">
-            <div aria-hidden="true" className="absolute inset-y-0 right-0 hidden w-1/3 -skew-x-12 translate-x-10 bg-gradient-to-l from-red-50 to-transparent md:block" />
+          <div className="relative overflow-hidden border border-white/10 bg-[#1a1c20] p-6 sm:p-8">
+            <div aria-hidden="true" className="absolute inset-y-0 right-0 hidden w-1/3 -skew-x-12 translate-x-10 bg-gradient-to-l from-[#dc2626]/20 to-transparent md:block" />
             <div className="relative flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
               <div>
                 <div className="flex items-center gap-2">
-                  <span aria-hidden="true" className="h-[3px] w-7 -skew-x-[30deg] bg-red-600" />
-                  <p className="text-xs font-extrabold uppercase tracking-wider text-red-600">New cars</p>
+                  <span aria-hidden="true" className="h-[3px] w-7 -skew-x-[30deg] bg-[#dc2626]" />
+                  <p className="text-xs font-extrabold uppercase tracking-widest text-[#f6c945]">New cars</p>
                 </div>
-                <h1 className="mt-3 text-3xl sm:text-5xl font-black italic tracking-tight text-slate-950 leading-[1.05]">
+                <h1
+                  className="mt-3 text-[clamp(2.25rem,6vw,4.5rem)] font-extrabold italic leading-[1.02] tracking-tight text-white"
+                  style={display}
+                >
                   Indian car catalog
                 </h1>
-                <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
+                <p className="mt-3 max-w-2xl text-sm leading-6 text-white/60">
                   Search by brand, body style, fuel type, and price. Use Price Breakup on any car to calculate state-wise on-road price.
                 </p>
               </div>
 
-              <div className={`relative flex-none self-start md:self-auto bg-gradient-to-br from-red-600 to-red-700 px-6 py-4 text-white md:text-right ${CUT_LG}`}>
-                <div aria-hidden="true" className="absolute -right-5 -top-5 h-20 w-20 rotate-12 bg-white/10" />
-                <span className="relative block text-[11px] font-bold uppercase tracking-wider text-red-100">
+              <div
+                className="relative flex-none self-start bg-[#dc2626] py-4 pl-6 pr-10 text-white md:self-auto md:text-right"
+                style={slant}
+              >
+                <span className="relative block text-[11px] font-bold uppercase tracking-widest text-white/80">
                   {totalCount > 0 ? `Showing ${startItem}–${endItem} of` : 'Total'}
                 </span>
-                <span className="relative text-3xl font-black tabular-nums">{totalCount} <span className="text-xl font-extrabold italic">Cars</span></span>
+                <span className="relative text-3xl font-extrabold italic tabular-nums" style={display}>
+                  {totalCount} <span className="text-xl">Cars</span>
+                </span>
               </div>
             </div>
           </div>
 
           {/* ---------- Filters ---------- */}
-          <div className="rounded-3xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
+          <div className="border border-white/10 bg-[#1a1c20] p-4 sm:p-5">
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr_1fr_1fr_auto]">
               <label className="relative sm:col-span-2 lg:col-span-1">
                 <span className="sr-only">Search car model or brand</span>
-                <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-red-600" />
+                <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#dc2626]" />
                 <input
                   value={searchQuery}
                   onChange={(e) => {
@@ -197,7 +216,7 @@ export default function Portfolio() {
                     setCurrentPage(1);
                   }}
                   placeholder="Search car model or brand"
-                  className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50 pl-11 pr-4 text-sm font-bold text-slate-900 placeholder:font-semibold placeholder:text-slate-400 outline-none transition-all duration-200 hover:border-red-300 focus:border-red-500 focus:bg-white focus:ring-4 focus:ring-red-600/10"
+                  className={`${fieldBase} border-white/15 bg-[#0d0e10] pl-11 pr-4 placeholder:font-semibold placeholder:text-white/40`}
                 />
               </label>
 
@@ -258,7 +277,8 @@ export default function Portfolio() {
               <button
                 type="button"
                 onClick={handleReset}
-                className={`group relative inline-flex h-12 items-center justify-center gap-2 overflow-hidden bg-slate-900 px-5 text-sm font-extrabold text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-red-600 active:scale-[0.97] ${CUT_SM}`}
+                className={`group relative inline-flex h-12 items-center justify-center gap-2 overflow-hidden bg-[#dc2626] pl-5 pr-7 text-sm font-extrabold italic uppercase tracking-wide text-white transition-all duration-300 hover:bg-[#f6c945] hover:text-[#0d0e10] active:scale-[0.97] ${focusRing}`}
+                style={{ ...slant, ...display }}
               >
                 <span aria-hidden="true" className="absolute inset-y-0 -left-1/2 w-1/3 -skew-x-[22deg] bg-white/30 transition-all duration-700 group-hover:left-[130%]" />
                 <RefreshCw className="relative h-4 w-4 transition-transform duration-500 group-hover:rotate-180" />
@@ -268,17 +288,17 @@ export default function Portfolio() {
 
             {/* Active filter chips */}
             {activeChips.length > 0 && (
-              <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-4">
-                <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Active</span>
+              <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-white/10 pt-4">
+                <span className="text-[11px] font-extrabold uppercase tracking-widest text-white/50">Active</span>
                 {activeChips.map((chip) => (
                   <button
                     key={chip.key}
                     type="button"
                     onClick={() => removeChip(chip)}
-                    className="group inline-flex items-center gap-1.5 rounded-full bg-red-50 py-1.5 pl-3.5 pr-2 text-xs font-bold capitalize text-red-700 ring-1 ring-red-200 transition-all hover:bg-red-600 hover:text-white hover:ring-red-600"
+                    className={`group inline-flex items-center gap-1.5 border border-[#dc2626]/50 bg-[#dc2626]/10 py-1.5 pl-3.5 pr-2 text-xs font-bold capitalize text-white transition-all hover:border-[#f6c945] hover:bg-[#f6c945] hover:text-[#0d0e10] ${focusRing}`}
                   >
                     <span>{chip.label}</span>
-                    <span className="grid h-4 w-4 place-items-center rounded-full bg-red-100 text-red-600 transition-colors group-hover:bg-white/25 group-hover:text-white">
+                    <span className="grid h-4 w-4 place-items-center bg-[#dc2626] text-white transition-colors group-hover:bg-[#0d0e10]/20 group-hover:text-[#0d0e10]">
                       <X className="h-3 w-3" />
                     </span>
                     <span className="sr-only">Remove filter</span>
@@ -290,9 +310,9 @@ export default function Portfolio() {
 
           {/* ---------- Results ---------- */}
           {isLoading ? (
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4" aria-hidden="true">
               {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((n) => (
-                <div key={n} className="h-80 animate-pulse rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-rose-50/60" />
+                <div key={n} className="h-96 border border-white/10 bg-[#1a1c20] motion-safe:animate-pulse" />
               ))}
             </div>
           ) : vehicles.length > 0 ? (
@@ -302,9 +322,9 @@ export default function Portfolio() {
               </div>
 
               {/* ---------- Pagination ---------- */}
-              <div className="mt-8 flex flex-col items-center justify-between gap-4 rounded-3xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm sm:flex-row">
-                <div className="flex flex-wrap items-center justify-center gap-3 text-sm text-slate-600 sm:justify-start">
-                  <span className="font-bold text-slate-500">Per page</span>
+              <div className="mt-8 flex flex-col items-center justify-between gap-4 border border-white/10 bg-[#1a1c20] p-4 sm:flex-row sm:p-5">
+                <div className="flex flex-wrap items-center justify-center gap-3 text-sm text-white/60 sm:justify-start">
+                  <span className="font-bold text-white/50">Per page</span>
                   <label className="relative">
                     <span className="sr-only">Cars per page</span>
                     <select
@@ -313,18 +333,18 @@ export default function Portfolio() {
                         setPageSize(e.target.value === 'all' ? 'all' : Number(e.target.value));
                         setCurrentPage(1);
                       }}
-                      className="h-9 cursor-pointer appearance-none rounded-lg border border-slate-200 bg-slate-50 pl-3 pr-8 text-sm font-bold text-slate-800 outline-none transition-all hover:border-red-300 focus:border-red-500 focus:ring-4 focus:ring-red-600/10"
+                      className="h-9 cursor-pointer appearance-none border border-white/15 bg-[#0d0e10] pl-3 pr-8 text-sm font-bold text-white outline-none transition-all hover:border-[#dc2626]/70 focus:border-[#f6c945] focus:ring-2 focus:ring-[#f6c945]/30 [&>option]:bg-[#1a1c20] [&>option]:text-white"
                     >
                       <option value={12}>12</option>
                       <option value={24}>24</option>
                       <option value={48}>48</option>
                       <option value="all">All ({totalCount})</option>
                     </select>
-                    <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+                    <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-white/50" />
                   </label>
-                  <span aria-hidden="true" className="hidden h-5 w-px -skew-x-12 bg-slate-200 sm:inline-block" />
+                  <span aria-hidden="true" className="hidden h-5 w-px -skew-x-12 bg-white/20 sm:inline-block" />
                   <span>
-                    Showing <strong className="text-slate-900">{startItem}–{endItem}</strong> of <strong className="text-slate-900">{totalCount}</strong> cars
+                    Showing <strong className="text-white">{startItem}–{endItem}</strong> of <strong className="text-white">{totalCount}</strong> cars
                   </span>
                 </div>
 
@@ -334,7 +354,7 @@ export default function Portfolio() {
                       type="button"
                       onClick={() => handlePageChange(currentPage - 1)}
                       disabled={currentPage === 1}
-                      className="group inline-flex h-9 items-center gap-1 rounded-lg border border-slate-200 px-3 text-xs font-extrabold text-slate-700 transition-all hover:border-red-300 hover:bg-red-50 hover:text-red-700 disabled:pointer-events-none disabled:opacity-40"
+                      className={`${pageBtn} ${focusRing}`}
                     >
                       <ChevronLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
                       Prev
@@ -347,16 +367,16 @@ export default function Portfolio() {
                           type="button"
                           onClick={() => handlePageChange(page)}
                           aria-current={currentPage === page ? 'page' : undefined}
-                          className={`h-9 min-w-[36px] px-2.5 text-xs font-extrabold transition-all duration-200 ${
-                            currentPage === page
-                              ? `bg-red-600 text-white shadow-lg shadow-red-600/30 -translate-y-0.5 ${CUT_SM}`
-                              : 'rounded-lg border border-slate-200 text-slate-700 hover:border-red-300 hover:bg-red-50 hover:text-red-700'
-                          }`}
+                          className={`h-9 min-w-[36px] px-2.5 text-xs font-extrabold transition-all duration-200 ${focusRing} ${currentPage === page
+                              ? 'bg-[#dc2626] pr-4 text-white'
+                              : 'border border-white/15 text-white hover:border-[#f6c945] hover:bg-[#f6c945] hover:text-[#0d0e10]'
+                            }`}
+                          style={currentPage === page ? slant : undefined}
                         >
                           {page}
                         </button>
                       ) : (
-                        <span key={`ellipsis-${idx}`} className="px-1 text-xs font-bold text-slate-400">
+                        <span key={`ellipsis-${idx}`} className="px-1 text-xs font-bold text-white/40">
                           …
                         </span>
                       )
@@ -366,7 +386,7 @@ export default function Portfolio() {
                       type="button"
                       onClick={() => handlePageChange(currentPage + 1)}
                       disabled={currentPage === totalPages}
-                      className="group inline-flex h-9 items-center gap-1 rounded-lg border border-slate-200 px-3 text-xs font-extrabold text-slate-700 transition-all hover:border-red-300 hover:bg-red-50 hover:text-red-700 disabled:pointer-events-none disabled:opacity-40"
+                      className={`${pageBtn} ${focusRing}`}
                     >
                       Next
                       <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
@@ -376,17 +396,20 @@ export default function Portfolio() {
               </div>
             </>
           ) : (
-            <div className="relative overflow-hidden rounded-3xl border border-slate-200 bg-white p-12 text-center shadow-sm">
-              <div aria-hidden="true" className="absolute -right-10 -top-10 h-40 w-40 -skew-x-12 bg-red-50" />
-              <span className={`relative mx-auto grid h-16 w-16 place-items-center bg-red-50 text-red-600 ${CUT_LG}`}>
+            <div className="relative overflow-hidden border border-white/10 bg-[#1a1c20] p-12 text-center">
+              <div aria-hidden="true" className="absolute -right-10 -top-10 h-40 w-40 -skew-x-12 bg-[#dc2626]/15" />
+              <span className="relative mx-auto grid h-16 w-16 place-items-center bg-[#dc2626]/15 text-[#dc2626]" style={slant}>
                 <Car className="h-8 w-8" />
               </span>
-              <h3 className="relative mt-5 text-2xl font-black italic tracking-tight text-slate-950">No cars found</h3>
-              <p className="relative mt-2 text-sm text-slate-500">Try a different brand, model, body style, or fuel filter.</p>
+              <h3 className="relative mt-5 text-3xl font-extrabold italic tracking-tight text-white" style={display}>
+                No cars found
+              </h3>
+              <p className="relative mt-2 text-sm text-white/60">Try a different brand, model, body style, or fuel filter.</p>
               <button
                 type="button"
                 onClick={handleReset}
-                className={`group relative mt-6 inline-flex items-center gap-2 overflow-hidden bg-red-600 px-6 py-3 text-sm font-extrabold text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-red-700 active:scale-[0.97] ${CUT_SM}`}
+                className={`group relative mt-6 inline-flex items-center gap-2 overflow-hidden bg-[#dc2626] py-3 pl-6 pr-8 text-sm font-extrabold italic uppercase tracking-wide text-white transition-all duration-300 hover:bg-[#f6c945] hover:text-[#0d0e10] active:scale-[0.97] ${focusRing}`}
+                style={{ ...slant, ...display }}
               >
                 <span aria-hidden="true" className="absolute inset-y-0 -left-1/2 w-1/3 -skew-x-[22deg] bg-white/40 transition-all duration-700 group-hover:left-[130%]" />
                 <RefreshCw className="relative h-4 w-4 transition-transform duration-500 group-hover:rotate-180" />

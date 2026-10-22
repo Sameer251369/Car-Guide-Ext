@@ -1,5 +1,62 @@
 import React from 'react';
-import { CheckCircle2, Info, Printer, Shield, AlertTriangle, AlertCircle, ExternalLink, Calendar, FileText } from 'lucide-react';
+import { CheckCircle2, Info, Printer, AlertTriangle, AlertCircle, ExternalLink, FileText } from 'lucide-react';
+
+/* --- Shared style tokens: replace with your existing ones if you have them --- */
+const display = { fontFamily: 'var(--font-display, inherit)' };
+const slant = { clipPath: 'polygon(0 0, 100% 0, calc(100% - 12px) 100%, 0 100%)' };
+const focusRing =
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f6c945] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d0e10]';
+
+const BADGES = {
+  gov: { label: 'Official Government', cls: 'bg-emerald-500/15 text-emerald-300 border-emerald-400/40' },
+  statutory: { label: 'Official Statutory', cls: 'bg-sky-500/15 text-sky-300 border-sky-400/40' },
+  ins: { label: 'Official Insurance', cls: 'bg-violet-500/15 text-violet-300 border-violet-400/40' },
+  tax: { label: 'Official Tax', cls: 'bg-[#f6c945]/15 text-[#f6c945] border-[#f6c945]/40' },
+  optional: { label: 'Optional / Dealer', cls: 'bg-white/5 text-white/60 border-white/20' },
+};
+
+const renderBadge = (type) => {
+  const badge = BADGES[type] || BADGES.optional;
+  return (
+    <span
+      className={`inline-block border py-1 pl-2.5 pr-4 text-[10px] font-extrabold uppercase italic tracking-wider ${badge.cls}`}
+      style={slant}
+    >
+      {badge.label}
+    </span>
+  );
+};
+
+const TONES = {
+  default: { row: 'hover:bg-white/[0.03]', title: 'text-white', detail: 'text-white/50', amount: 'text-white' },
+  strong: { row: 'hover:bg-white/[0.03]', title: 'text-white font-bold', detail: 'text-white/50', amount: 'text-white font-bold' },
+  indigo: { row: 'bg-indigo-500/10', title: 'text-indigo-200', detail: 'text-indigo-200/70', amount: 'text-indigo-100' },
+  amber: { row: 'bg-[#f6c945]/10', title: 'text-[#f6c945]', detail: 'text-[#f6c945]/70', amount: 'text-[#f6c945] font-semibold' },
+};
+
+function Row({ title, detail, amount, badge, tone = 'default' }) {
+  const t = TONES[tone];
+  return (
+    <tr className={`transition-colors ${t.row}`}>
+      <td className={`px-4 py-3.5 font-medium ${t.title}`}>{title}</td>
+      <td className={`px-4 py-3.5 text-xs ${t.detail}`}>{detail}</td>
+      <td className={`px-4 py-3.5 text-right font-mono tabular-nums ${t.amount}`}>{amount}</td>
+      <td className="px-4 py-3.5 text-center">{renderBadge(badge)}</td>
+    </tr>
+  );
+}
+
+function Disclaimer({ text, label }) {
+  return (
+    <div className="space-y-1.5 border border-white/10 bg-[#0d0e10] p-4 text-[11px]">
+      <p className="flex items-center gap-1.5 font-extrabold uppercase italic tracking-wider text-white/80" style={display}>
+        <Info className="h-3.5 w-3.5 shrink-0 text-[#dc2626]" aria-hidden="true" />
+        <span>{label}</span>
+      </p>
+      <p className="leading-relaxed text-white/50">{text}</p>
+    </div>
+  );
+}
 
 export default function PriceBreakdownTable({ breakdown, vehicleName, variantName, leadId }) {
   if (!breakdown) return null;
@@ -20,19 +77,20 @@ export default function PriceBreakdownTable({ breakdown, vehicleName, variantNam
   // Data Not Available for State / Fuel combination
   if (breakdown.data_available === false) {
     return (
-      <div className="rounded-lg bg-red-50 border border-red-200 p-6 md:p-8 shadow-xl space-y-4">
-        <div className="flex items-center space-x-3 text-red-700">
-          <AlertTriangle className="w-7 h-7 shrink-0 text-red-600" />
+      <div className="relative space-y-4 overflow-hidden border border-[#dc2626]/50 bg-[#1a1c20] p-6 md:p-8">
+        <div aria-hidden="true" className="pointer-events-none absolute -right-10 top-0 h-full w-1/2 -skew-x-12 bg-gradient-to-l from-[#dc2626]/20 to-transparent" />
+        <div className="relative flex items-center gap-3">
+          <AlertTriangle className="h-8 w-8 shrink-0 text-[#dc2626]" aria-hidden="true" />
           <div>
-            <h2 className="text-xl font-bold text-slate-950">{vehicleName}</h2>
-            <p className="text-xs text-red-700 font-medium">
+            <h2 className="text-2xl font-extrabold italic leading-none text-white" style={display}>{vehicleName}</h2>
+            <p className="mt-1.5 text-xs font-bold uppercase tracking-widest text-[#dc2626]">
               Tax Rule Data Gap • {breakdown.state_name} ({breakdown.state_code})
             </p>
           </div>
         </div>
 
-        <div className="p-4 rounded-md bg-white border border-red-200 text-slate-700 text-xs space-y-2">
-          <h3 className="font-bold text-red-700 text-sm">Verified RTO Data Gap</h3>
+        <div className="relative space-y-2 border border-white/10 bg-[#0d0e10] p-4 text-xs text-white/70">
+          <h3 className="text-sm font-extrabold uppercase italic tracking-wide text-[#f6c945]" style={display}>Verified RTO Data Gap</h3>
           <p className="leading-relaxed">
             {breakdown.message || `State tax rules for ${breakdown.state_name} have not been verified in our rule engine. We surface this data gap explicitly rather than silently estimating a flat tax percentage.`}
           </p>
@@ -44,30 +102,29 @@ export default function PriceBreakdownTable({ breakdown, vehicleName, variantNam
   // If vehicle is TBA
   if (breakdown.is_tba) {
     return (
-      <div className="rounded-lg bg-white border border-amber-300 p-6 md:p-8 shadow-xl space-y-6">
-        <div className="flex items-center space-x-3 text-amber-800">
-          <AlertCircle className="w-8 h-8 shrink-0 text-amber-600" />
+      <div className="relative space-y-6 overflow-hidden border border-[#f6c945]/40 bg-[#1a1c20] p-6 md:p-8">
+        <div aria-hidden="true" className="pointer-events-none absolute -right-10 top-0 h-full w-1/2 -skew-x-12 bg-gradient-to-l from-[#f6c945]/10 to-transparent" />
+        <div className="relative flex items-center gap-3">
+          <AlertCircle className="h-9 w-9 shrink-0 text-[#f6c945]" aria-hidden="true" />
           <div>
-            <h2 className="text-2xl font-bold text-slate-950">{vehicleName}</h2>
-            <p className="text-xs text-amber-700 font-medium">
+            <h2 className="text-3xl font-extrabold italic leading-none text-white" style={display}>{vehicleName}</h2>
+            <p className="mt-1.5 text-xs font-bold uppercase tracking-widest text-[#f6c945]">
               Price to be announced • {breakdown.state_name || 'All States'}
             </p>
           </div>
         </div>
 
-        <div className="p-6 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-sm space-y-2">
-          <h3 className="font-bold text-amber-800 text-base">Unlaunched / Pricing TBA Vehicle</h3>
+        <div className="relative space-y-2 border border-[#f6c945]/30 bg-[#f6c945]/10 p-6 text-sm text-white/80">
+          <h3 className="text-lg font-extrabold uppercase italic tracking-wide text-[#f6c945]" style={display}>
+            Unlaunched / Pricing TBA Vehicle
+          </h3>
           <p>
-            Official prices for <span className="font-semibold text-slate-950">{vehicleName}</span> have not been announced by the manufacturer yet. On-road price estimates will be available immediately upon official launch.
+            Official prices for <span className="font-bold text-white">{vehicleName}</span> have not been announced by the manufacturer yet. On-road price estimates will be available immediately upon official launch.
           </p>
         </div>
 
-        <div className="p-4 rounded-lg bg-slate-50 border border-slate-200 text-[11px] text-slate-500 space-y-1">
-          <p className="font-semibold text-slate-700 flex items-center gap-1.5">
-            <Info className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-            <span>Mandatory Legal Disclaimer:</span>
-          </p>
-          <p className="leading-relaxed font-light">{mandatoryDisclaimer}</p>
+        <div className="relative">
+          <Disclaimer label="Mandatory Legal Disclaimer:" text={mandatoryDisclaimer} />
         </div>
       </div>
     );
@@ -80,290 +137,269 @@ export default function PriceBreakdownTable({ breakdown, vehicleName, variantNam
   const insBreakdown = breakdown.insurance_breakdown || {};
   const meta = breakdown.rule_metadata || {};
 
-  // Define Badge Pill Renderer
-  const renderBadge = (type) => {
-    if (type === 'gov') {
-      return <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-emerald-100 text-emerald-800 border border-emerald-300">Official Government</span>;
-    }
-    if (type === 'statutory') {
-      return <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-blue-100 text-blue-800 border border-blue-300">Official Statutory</span>;
-    }
-    if (type === 'ins') {
-      return <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-purple-100 text-purple-800 border border-purple-300">Official Insurance</span>;
-    }
-    if (type === 'tax') {
-      return <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-amber-100 text-amber-800 border border-amber-300">Official Tax</span>;
-    }
-    return <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-slate-100 text-slate-700 border border-slate-300">Optional / Dealer</span>;
-  };
+  const isEvFree =
+    Number(breakdown.road_tax_rate_percent) === 0 &&
+    String(breakdown.effective_fuel_type).toLowerCase().includes('electric');
 
   return (
-    <div className="rounded-lg bg-white border border-slate-200 p-6 md:p-8 shadow-xl shadow-slate-200/70 space-y-8">
+    <div className="relative space-y-8 overflow-hidden border border-white/10 bg-[#1a1c20] p-6 text-white md:p-8">
+      {/* Decorative speed panels */}
+      <div aria-hidden="true" className="pointer-events-none absolute -right-16 -top-10 h-72 w-72 -skew-x-12 bg-gradient-to-br from-[#dc2626]/15 to-transparent" />
 
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between pb-6 border-b border-slate-200 gap-4">
+      {/* ---------- Header ---------- */}
+      <div className="relative flex flex-col justify-between gap-4 border-b border-white/10 pb-6 md:flex-row md:items-center">
         <div>
-          <div className="flex items-center space-x-2 text-xs text-red-600 font-semibold uppercase tracking-wider mb-1">
-            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+          <div className="mb-2 flex flex-wrap items-center gap-2 text-xs font-extrabold uppercase tracking-widest text-[#f6c945]">
+            <span aria-hidden="true" className="h-[3px] w-7 -skew-x-[30deg] bg-[#dc2626]" />
+            <CheckCircle2 className="h-4 w-4 text-emerald-400" aria-hidden="true" />
             <span>Rule-Engine State-Wise On-Road Price Unlocked</span>
-            {leadId && <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-[10px]">Ref #{leadId}</span>}
+            {leadId && (
+              <span className="border border-white/20 bg-white/5 px-2 py-0.5 text-[10px] text-white/70">Ref #{leadId}</span>
+            )}
           </div>
-          <h2 className="text-2xl font-bold text-slate-950">{vehicleName}</h2>
-          <p className="text-xs text-slate-500 font-medium">
-            {variantName} • {breakdown.state_name} ({breakdown.state_code}) • Powertrain: <strong className="text-slate-900 uppercase">{breakdown.effective_fuel_type}</strong> • Ownership: <strong className="text-slate-900 uppercase">{breakdown.ownership_type || 'individual'}</strong>
+          <h2 className="text-3xl font-extrabold italic leading-none tracking-tight text-white sm:text-4xl" style={display}>
+            {vehicleName}
+          </h2>
+          <p className="mt-2 text-xs font-medium text-white/50">
+            {variantName} • {breakdown.state_name} ({breakdown.state_code}) • Powertrain:{' '}
+            <strong className="uppercase text-white">{breakdown.effective_fuel_type}</strong> • Ownership:{' '}
+            <strong className="uppercase text-white">{breakdown.ownership_type || 'individual'}</strong>
           </p>
         </div>
 
         <button
+          type="button"
           onClick={handlePrint}
-          className="flex items-center space-x-1.5 px-4 py-2 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold border border-slate-200 transition-colors"
+          className={`group relative inline-flex h-11 items-center justify-center gap-2 overflow-hidden bg-[#dc2626] pl-5 pr-7 text-xs font-extrabold uppercase italic tracking-wide text-white transition-all duration-300 hover:bg-[#f6c945] hover:text-[#0d0e10] active:scale-[0.97] ${focusRing}`}
+          style={{ ...slant, ...display }}
         >
-          <Printer className="w-4 h-4 text-red-600" />
-          <span>Print Quotation</span>
+          <span aria-hidden="true" className="absolute inset-y-0 -left-1/2 w-1/3 -skew-x-[22deg] bg-white/30 transition-all duration-700 group-hover:left-[130%]" />
+          <Printer className="relative h-4 w-4" aria-hidden="true" />
+          <span className="relative">Print Quotation</span>
         </button>
       </div>
 
       {breakdown.note && (
-        <div className="p-3.5 rounded-md bg-amber-50 border border-amber-200 text-amber-800 text-xs flex items-center space-x-2">
-          <Info className="w-4 h-4 shrink-0 text-amber-600" />
+        <div className="relative flex items-center gap-2 border border-[#f6c945]/40 bg-[#f6c945]/10 p-3.5 text-xs text-[#f6c945]">
+          <Info className="h-4 w-4 shrink-0" aria-hidden="true" />
           <span>Note: {breakdown.note}</span>
         </div>
       )}
 
-      {/* Auditable 4-Column Table */}
-      <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
+      {/* ---------- Auditable 4-column table ---------- */}
+      <div className="relative overflow-x-auto border border-white/10 bg-[#0d0e10]">
         <table className="w-full text-left text-sm">
-          <thead className="bg-slate-50 text-xs font-bold text-slate-600 uppercase tracking-wider border-b border-slate-200">
+          <thead className="border-b border-[#dc2626]/60 bg-[#24272d] text-xs font-extrabold uppercase tracking-widest text-white/60">
             <tr>
-              <th className="py-3.5 px-4">Component</th>
-              <th className="py-3.5 px-4">Methodology &amp; Details</th>
-              <th className="py-3.5 px-4 text-right">Amount (INR)</th>
-              <th className="py-3.5 px-4 text-center">Charge Type</th>
+              <th className="px-4 py-3.5">Component</th>
+              <th className="px-4 py-3.5">Methodology &amp; Details</th>
+              <th className="px-4 py-3.5 text-right">Amount (INR)</th>
+              <th className="px-4 py-3.5 text-center">Charge Type</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100 text-slate-700">
+          <tbody className="divide-y divide-white/10 text-white/80">
+            <Row
+              tone="strong"
+              title="1. Ex-Showroom Price"
+              detail="Verified manufacturer ex-factory price"
+              amount={formatRupees(breakdown.ex_showroom_price)}
+              badge="gov"
+            />
 
-            {/* Module 1: Base Ex-Showroom */}
-            <tr>
-              <td className="py-3.5 px-4 font-semibold text-slate-950">1. Ex-Showroom Price</td>
-              <td className="py-3.5 px-4 text-xs text-slate-500">Verified manufacturer ex-factory price</td>
-              <td className="py-3.5 px-4 text-right font-mono font-bold text-slate-950">{formatRupees(breakdown.ex_showroom_price)}</td>
-              <td className="py-3.5 px-4 text-center">{renderBadge('gov')}</td>
-            </tr>
-
-            {/* Module 2: State Lifetime Road Tax */}
-            <tr>
-              <td className="py-3.5 px-4 font-medium">2. State Lifetime Road Tax</td>
-              <td className="py-3.5 px-4 text-xs text-slate-500">
-                {Number(breakdown.road_tax_rate_percent) === 0 && String(breakdown.effective_fuel_type).toLowerCase().includes('electric')
+            <Row
+              title="2. State Lifetime Road Tax"
+              detail={
+                isEvFree
                   ? `EV road-tax exemption (${breakdown.state_code})`
-                  : `${breakdown.road_tax_rate_percent}% slab rate (${breakdown.state_code} ${breakdown.effective_fuel_type}, ${breakdown.ownership_type})`}
-              </td>
-              <td className="py-3.5 px-4 text-right font-mono font-medium">{formatRupees(breakdown.road_tax)}</td>
-              <td className="py-3.5 px-4 text-center">{renderBadge('gov')}</td>
-            </tr>
+                  : `${breakdown.road_tax_rate_percent}% slab rate (${breakdown.state_code} ${breakdown.effective_fuel_type}, ${breakdown.ownership_type})`
+              }
+              amount={formatRupees(breakdown.road_tax)}
+              badge="gov"
+            />
 
-            {/* Module 3: Registration Fee */}
-            <tr>
-              <td className="py-3.5 px-4 font-medium">3. RTO Registration Fee</td>
-              <td className="py-3.5 px-4 text-xs text-slate-500">Statutory RTO initial registration fee</td>
-              <td className="py-3.5 px-4 text-right font-mono">{formatRupees(breakdown.registration_fee)}</td>
-              <td className="py-3.5 px-4 text-center">{renderBadge('gov')}</td>
-            </tr>
+            <Row
+              title="3. RTO Registration Fee"
+              detail="Statutory RTO initial registration fee"
+              amount={formatRupees(breakdown.registration_fee)}
+              badge="gov"
+            />
 
-            {/* Module 4: Smart Card RC */}
-            <tr>
-              <td className="py-3.5 px-4 font-medium">4. Smart Card RC Fee</td>
-              <td className="py-3.5 px-4 text-xs text-slate-500">Physical chip-embedded Registration Certificate fee</td>
-              <td className="py-3.5 px-4 text-right font-mono">{formatRupees(breakdown.smart_card_fee)}</td>
-              <td className="py-3.5 px-4 text-center">{renderBadge('gov')}</td>
-            </tr>
+            <Row
+              title="4. Smart Card RC Fee"
+              detail="Physical chip-embedded Registration Certificate fee"
+              amount={formatRupees(breakdown.smart_card_fee)}
+              badge="gov"
+            />
 
-            {/* Module 5: HSRP */}
-            <tr>
-              <td className="py-3.5 px-4 font-medium">5. High Security Registration Plate (HSRP)</td>
-              <td className="py-3.5 px-4 text-xs text-slate-500">Tamper-proof HSRP license plate &amp; snap-lock fee</td>
-              <td className="py-3.5 px-4 text-right font-mono">{formatRupees(breakdown.hsrp_fee)}</td>
-              <td className="py-3.5 px-4 text-center">{renderBadge('gov')}</td>
-            </tr>
+            <Row
+              title="5. High Security Registration Plate (HSRP)"
+              detail="Tamper-proof HSRP license plate & snap-lock fee"
+              amount={formatRupees(breakdown.hsrp_fee)}
+              badge="gov"
+            />
 
-            {/* Module 6: Hypothecation Fee (if financed) */}
             {breakdown.is_financed && (
-              <tr>
-                <td className="py-3.5 px-4 font-medium text-indigo-900">6. Bank Hypothecation Fee</td>
-                <td className="py-3.5 px-4 text-xs text-indigo-800/80">RTO bank loan lien endorsement charge</td>
-                <td className="py-3.5 px-4 text-right font-mono text-indigo-950">{formatRupees(breakdown.hypothecation_fee)}</td>
-                <td className="py-3.5 px-4 text-center">{renderBadge('statutory')}</td>
-              </tr>
+              <Row
+                tone="indigo"
+                title="6. Bank Hypothecation Fee"
+                detail="RTO bank loan lien endorsement charge"
+                amount={formatRupees(breakdown.hypothecation_fee)}
+                badge="statutory"
+              />
             )}
 
-            {/* Module 7: Temporary Registration Fee */}
             {breakdown.temp_registration_fee > 0 && (
-              <tr>
-                <td className="py-3.5 px-4 font-medium">7. Temporary Registration Fee</td>
-                <td className="py-3.5 px-4 text-xs text-slate-500">Inter-state transit temporary RTO permit</td>
-                <td className="py-3.5 px-4 text-right font-mono">{formatRupees(breakdown.temp_registration_fee)}</td>
-                <td className="py-3.5 px-4 text-center">{renderBadge('statutory')}</td>
-              </tr>
+              <Row
+                title="7. Temporary Registration Fee"
+                detail="Inter-state transit temporary RTO permit"
+                amount={formatRupees(breakdown.temp_registration_fee)}
+                badge="statutory"
+              />
             )}
 
-            {/* Module 8: Road Safety Cess */}
             {breakdown.road_safety_cess > 0 && (
-              <tr>
-                <td className="py-3.5 px-4 font-medium">8. Road Safety Cess</td>
-                <td className="py-3.5 px-4 text-xs text-slate-500">
-                  {breakdown.cess_rate_percent}% state transport safety infrastructure cess
-                </td>
-                <td className="py-3.5 px-4 text-right font-mono">{formatRupees(breakdown.road_safety_cess)}</td>
-                <td className="py-3.5 px-4 text-center">{renderBadge('gov')}</td>
-              </tr>
+              <Row
+                title="8. Road Safety Cess"
+                detail={`${breakdown.cess_rate_percent}% state transport safety infrastructure cess`}
+                amount={formatRupees(breakdown.road_safety_cess)}
+                badge="gov"
+              />
             )}
 
-            {/* Module 9: Green Tax */}
             {breakdown.green_tax > 0 && (
-              <tr>
-                <td className="py-3.5 px-4 font-medium">9. Green Tax / Environmental Levy</td>
-                <td className="py-3.5 px-4 text-xs text-slate-500">State environmental protection green tax</td>
-                <td className="py-3.5 px-4 text-right font-mono">{formatRupees(breakdown.green_tax)}</td>
-                <td className="py-3.5 px-4 text-center">{renderBadge('gov')}</td>
-              </tr>
+              <Row
+                title="9. Green Tax / Environmental Levy"
+                detail="State environmental protection green tax"
+                amount={formatRupees(breakdown.green_tax)}
+                badge="gov"
+              />
             )}
 
-            {/* Module 10: Municipal / Infra Cess */}
             {breakdown.municipal_cess > 0 && (
-              <tr>
-                <td className="py-3.5 px-4 font-medium">10. Municipal / Infrastructure Cess</td>
-                <td className="py-3.5 px-4 text-xs text-slate-500">Local municipal corporation infrastructure levy</td>
-                <td className="py-3.5 px-4 text-right font-mono">{formatRupees(breakdown.municipal_cess)}</td>
-                <td className="py-3.5 px-4 text-center">{renderBadge('gov')}</td>
-              </tr>
+              <Row
+                title="10. Municipal / Infrastructure Cess"
+                detail="Local municipal corporation infrastructure levy"
+                amount={formatRupees(breakdown.municipal_cess)}
+                badge="gov"
+              />
             )}
 
-            {/* Module 11: Comprehensive Insurance */}
-            <tr>
-              <td className="py-3.5 px-4 font-medium">11. Comprehensive Insurance (1-Yr OD + 3-Yr TP)</td>
-              <td className="py-3.5 px-4 text-xs text-slate-500">
-                IRDAI standard: 95% IDV ({formatRupees(insBreakdown.idv || breakdown.ex_showroom_price * 0.95)}) • OD: {formatRupees(insBreakdown.own_damage_premium)} + 3-Yr TP: {formatRupees(insBreakdown.third_party_premium)}
-              </td>
-              <td className="py-3.5 px-4 text-right font-mono">{formatRupees(breakdown.insurance_estimate)}</td>
-              <td className="py-3.5 px-4 text-center">{renderBadge('ins')}</td>
-            </tr>
+            <Row
+              title="11. Comprehensive Insurance (1-Yr OD + 3-Yr TP)"
+              detail={`IRDAI standard: 95% IDV (${formatRupees(insBreakdown.idv || breakdown.ex_showroom_price * 0.95)}) • OD: ${formatRupees(insBreakdown.own_damage_premium)} + 3-Yr TP: ${formatRupees(insBreakdown.third_party_premium)}`}
+              amount={formatRupees(breakdown.insurance_estimate)}
+              badge="ins"
+            />
 
-            {/* Module 12: FASTag Fee */}
-            <tr>
-              <td className="py-3.5 px-4 font-medium">12. FASTag Fee</td>
-              <td className="py-3.5 px-4 text-xs text-slate-500">Mandatory NHAI RFID national highway toll tag</td>
-              <td className="py-3.5 px-4 text-right font-mono">{formatRupees(breakdown.fastag_fee)}</td>
-              <td className="py-3.5 px-4 text-center">{renderBadge('statutory')}</td>
-            </tr>
+            <Row
+              title="12. FASTag Fee"
+              detail="Mandatory NHAI RFID national highway toll tag"
+              amount={formatRupees(breakdown.fastag_fee)}
+              badge="statutory"
+            />
 
-            {/* Module 13: TCS (1% > ₹10L) */}
             {breakdown.tcs_amount > 0 && (
-              <tr className="bg-amber-50/50">
-                <td className="py-3.5 px-4 font-medium text-amber-900">13. TCS (1% Income Tax Act &gt; ₹10L)</td>
-                <td className="py-3.5 px-4 text-xs text-amber-800/80">
-                  1% Tax Collected at Source (Section 206C) on ex-showroom &gt; ₹10 Lakhs
-                </td>
-                <td className="py-3.5 px-4 text-right font-mono font-semibold text-amber-900">{formatRupees(breakdown.tcs_amount)}</td>
-                <td className="py-3.5 px-4 text-center">{renderBadge('tax')}</td>
-              </tr>
+              <Row
+                tone="amber"
+                title="13. TCS (1% Income Tax Act > ₹10L)"
+                detail="1% Tax Collected at Source (Section 206C) on ex-showroom > ₹10 Lakhs"
+                amount={formatRupees(breakdown.tcs_amount)}
+                badge="tax"
+              />
             )}
 
-            {/* Optional Dealer Handling */}
-            <tr>
-              <td className="py-3.5 px-4 font-medium">Dealer Handling &amp; Logistics</td>
-              <td className="py-3.5 px-4 text-xs text-slate-500">Handling, logistics &amp; miscellaneous preparation fees</td>
-              <td className="py-3.5 px-4 text-right font-mono">{formatRupees(Number(breakdown.dealer_charges || 0) + Number(breakdown.misc_fee || 0))}</td>
-              <td className="py-3.5 px-4 text-center">{renderBadge('optional')}</td>
-            </tr>
-
+            <Row
+              title="Dealer Handling & Logistics"
+              detail="Handling, logistics & miscellaneous preparation fees"
+              amount={formatRupees(Number(breakdown.dealer_charges || 0) + Number(breakdown.misc_fee || 0))}
+              badge="optional"
+            />
           </tbody>
         </table>
       </div>
 
-      {/* Bottom Subtotals Section */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
-
-        <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">Total Government &amp; RTO Charges</span>
-          <span className="text-lg font-extrabold text-slate-900 font-mono mt-1 block">
+      {/* ---------- Subtotals ---------- */}
+      <div className="relative grid grid-cols-1 gap-4 pt-2 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="border border-white/10 bg-[#0d0e10] p-4 transition-colors hover:border-[#dc2626]/60">
+          <span className="block text-[10px] font-extrabold uppercase tracking-widest text-white/50">Total Government &amp; RTO Charges</span>
+          <span className="mt-1 block font-mono text-lg font-extrabold tabular-nums text-white">
             {formatRupees(breakdown.total_government_charges)}
           </span>
-          <span className="text-[10px] text-slate-400 block mt-0.5">Road Tax + Reg + Cesses + TCS</span>
+          <span className="mt-0.5 block text-[10px] text-white/40">Road Tax + Reg + Cesses + TCS</span>
         </div>
 
-        <div className="p-4 rounded-xl bg-purple-50/60 border border-purple-200">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-purple-700 block">Total Insurance (1+3 Yr)</span>
-          <span className="text-lg font-extrabold text-purple-900 font-mono mt-1 block">
+        <div className="border border-violet-400/30 bg-violet-500/10 p-4 transition-colors hover:border-violet-300/70">
+          <span className="block text-[10px] font-extrabold uppercase tracking-widest text-violet-300">Total Insurance (1+3 Yr)</span>
+          <span className="mt-1 block font-mono text-lg font-extrabold tabular-nums text-violet-100">
             {formatRupees(breakdown.total_insurance)}
           </span>
-          <span className="text-[10px] text-purple-600 block mt-0.5">IRDAI Statutory 1-Yr OD + 3-Yr TP</span>
+          <span className="mt-0.5 block text-[10px] text-violet-300/70">IRDAI Statutory 1-Yr OD + 3-Yr TP</span>
         </div>
 
-        <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">Optional &amp; FASTag Charges</span>
-          <span className="text-lg font-extrabold text-slate-900 font-mono mt-1 block">
+        <div className="border border-white/10 bg-[#0d0e10] p-4 transition-colors hover:border-[#dc2626]/60">
+          <span className="block text-[10px] font-extrabold uppercase tracking-widest text-white/50">Optional &amp; FASTag Charges</span>
+          <span className="mt-1 block font-mono text-lg font-extrabold tabular-nums text-white">
             {formatRupees(breakdown.optional_charges)}
           </span>
-          <span className="text-[10px] text-slate-400 block mt-0.5">FASTag + Handling &amp; Preparation</span>
+          <span className="mt-0.5 block text-[10px] text-white/40">FASTag + Handling &amp; Preparation</span>
         </div>
 
-        <div className="p-4 rounded-xl bg-red-600 text-white shadow-lg shadow-red-200">
-          <span className="text-[10px] font-extrabold uppercase tracking-wider text-red-100 block">Final On-Road Price</span>
-          <span className="text-xl font-black font-mono mt-1 block">
+        <div className="relative overflow-hidden bg-[#dc2626] py-4 pl-4 pr-8 text-white shadow-[0_18px_30px_-16px_rgba(220,38,38,0.8)]" style={slant}>
+          <div aria-hidden="true" className="absolute -right-6 top-0 h-full w-1/2 -skew-x-12 bg-white/10" />
+          <span className="relative block text-[10px] font-extrabold uppercase tracking-widest text-white/80">Final On-Road Price</span>
+          <span className="relative mt-1 block font-mono text-2xl font-extrabold italic tabular-nums text-white" style={display}>
             {formatRupees(breakdown.final_on_road_price || breakdown.total_on_road_price)}
           </span>
-          <span className="text-[10px] text-red-100 block mt-0.5 font-medium">All Charges Included</span>
+          <span className="relative mt-0.5 block text-[10px] font-medium text-white/80">All Charges Included</span>
         </div>
-
       </div>
 
-      {/* Rule Engine Verification Footer Box */}
+      {/* ---------- Rule engine verification ---------- */}
       {meta.notificationNumber && (
-        <div className="p-4 rounded-xl bg-slate-900 text-slate-300 text-xs space-y-2 border border-slate-800">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-            <span className="font-bold text-amber-400 flex items-center gap-1.5">
-              <FileText className="w-4 h-4 text-amber-400" />
+        <div className="relative space-y-2 border border-[#f6c945]/30 bg-[#0d0e10] p-4 text-xs text-white/70">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-2">
+            <span className="flex items-center gap-1.5 text-sm font-extrabold uppercase italic tracking-wide text-[#f6c945]" style={display}>
+              <FileText className="h-4 w-4" aria-hidden="true" />
               <span>Official RTO Gazette Rule Verification:</span>
             </span>
-            <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+            <span className="border border-emerald-400/30 bg-emerald-500/10 px-2 py-0.5 font-mono text-[10px] text-emerald-300">
               Rule Active &amp; Verified
             </span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-[11px] font-mono pt-1">
+          <div className="grid grid-cols-1 gap-3 pt-1 font-mono text-[11px] sm:grid-cols-2 md:grid-cols-4">
             <div>
-              <span className="text-slate-500 block text-[10px] uppercase font-sans">Notification ID</span>
-              <span className="text-slate-200 font-bold">{meta.notificationNumber}</span>
+              <span className="block font-sans text-[10px] uppercase tracking-widest text-white/40">Notification ID</span>
+              <span className="font-bold text-white">{meta.notificationNumber}</span>
             </div>
             <div>
-              <span className="text-slate-500 block text-[10px] uppercase font-sans">Effective Date</span>
-              <span className="text-slate-200">{meta.effectiveFrom} – {meta.effectiveTo}</span>
+              <span className="block font-sans text-[10px] uppercase tracking-widest text-white/40">Effective Date</span>
+              <span className="text-white">{meta.effectiveFrom} – {meta.effectiveTo}</span>
             </div>
             <div>
-              <span className="text-slate-500 block text-[10px] uppercase font-sans">Last Verified Date</span>
-              <span className="text-slate-200">{meta.lastVerified}</span>
+              <span className="block font-sans text-[10px] uppercase tracking-widest text-white/40">Last Verified Date</span>
+              <span className="text-white">{meta.lastVerified}</span>
             </div>
             <div>
-              <span className="text-slate-500 block text-[10px] uppercase font-sans">Gazette Source</span>
-              <a href={meta.sourceURL} target="_blank" rel="noopener noreferrer" className="text-amber-400 hover:underline flex items-center gap-1">
+              <span className="block font-sans text-[10px] uppercase tracking-widest text-white/40">Gazette Source</span>
+              <a
+                href={meta.sourceURL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`inline-flex items-center gap-1 text-[#f6c945] underline decoration-[#dc2626] decoration-2 underline-offset-4 hover:text-white ${focusRing}`}
+              >
                 <span>MoRTH Portal</span>
-                <ExternalLink className="w-3 h-3" />
+                <ExternalLink className="h-3 w-3" aria-hidden="true" />
               </a>
             </div>
           </div>
         </div>
       )}
 
-      {/* Mandatory legal disclaimer */}
-      <div className="p-4 rounded-lg bg-slate-50 border border-slate-200 text-[11px] text-slate-500 space-y-1.5">
-        <p className="font-semibold text-slate-700 flex items-center gap-1.5">
-          <Info className="w-3.5 h-3.5 text-red-600 shrink-0" />
-          <span>Mandatory Disclaimer:</span>
-        </p>
-        <p className="leading-relaxed font-light text-slate-600">{mandatoryDisclaimer}</p>
+      {/* ---------- Mandatory legal disclaimer ---------- */}
+      <div className="relative">
+        <Disclaimer label="Mandatory Disclaimer:" text={mandatoryDisclaimer} />
       </div>
-
     </div>
   );
 }
