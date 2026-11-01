@@ -8,14 +8,15 @@ import VehicleCard from '../components/VehicleCard';
 
 const listingStates = new Map();
 
-/* --- Shared style tokens: replace with your existing ones if you have them --- */
-const display = { fontFamily: 'var(--font-display, inherit)' };
-const slant = { clipPath: 'polygon(0 0, 100% 0, calc(100% - 12px) 100%, 0 100%)' };
+/* Tokens: ink #0a0e13 · panel #11161d · sodium #ffb224 */
+const wide = { fontFamily: "'Archivo','Arial Black',system-ui,sans-serif", fontStretch: '125%' };
+const body = { fontFamily: "'Hanken Grotesk','Inter',system-ui,sans-serif" };
+
 const focusRing =
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f6c945] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d0e10]';
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ffb224] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0e13]';
 
 const fieldBase =
-  'h-12 w-full border bg-[#1a1c20] text-sm font-bold text-white outline-none transition-all duration-200 hover:border-[#dc2626]/70 focus:border-[#f6c945] focus:ring-2 focus:ring-[#f6c945]/30';
+  'h-12 w-full rounded-full border bg-white/[0.06] text-sm font-semibold text-white outline-none transition-colors duration-200 hover:border-white/40 focus:border-[#ffb224] focus:ring-2 focus:ring-[#ffb224]/30';
 
 /* Styled select with custom chevron */
 function FilterSelect({ value, onChange, children, label, active }) {
@@ -25,14 +26,16 @@ function FilterSelect({ value, onChange, children, label, active }) {
       <select
         value={value}
         onChange={onChange}
-        className={`${fieldBase} cursor-pointer appearance-none pl-4 pr-10 [&>option]:bg-[#1a1c20] [&>option]:text-white ${active ? 'border-[#dc2626] bg-[#dc2626]/10 text-[#f6c945]' : 'border-white/15'
-          }`}
+        className={`${fieldBase} cursor-pointer appearance-none pl-5 pr-10 [&>option]:bg-[#11161d] [&>option]:text-white ${
+          active ? 'border-[#ffb224] bg-[#ffb224]/10 text-[#ffb224]' : 'border-white/15'
+        }`}
       >
         {children}
       </select>
       <ChevronDown
-        className={`pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 transition-transform duration-200 group-focus-within:rotate-180 ${active ? 'text-[#f6c945]' : 'text-white/50'
-          }`}
+        className={`pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 transition-transform duration-200 group-focus-within:rotate-180 ${
+          active ? 'text-[#ffb224]' : 'text-white/50'
+        }`}
       />
     </label>
   );
@@ -153,7 +156,7 @@ export default function Portfolio() {
   };
 
   const pageBtn =
-    'group inline-flex h-9 items-center gap-1 border border-white/15 px-3 text-xs font-extrabold text-white transition-all hover:border-[#f6c945] hover:bg-[#f6c945] hover:text-[#0d0e10] disabled:pointer-events-none disabled:opacity-40';
+    'group inline-flex h-10 items-center gap-1 rounded-full border border-white/15 px-4 text-sm font-semibold text-white transition-colors hover:border-[#ffb224] hover:bg-[#ffb224] hover:text-[#0a0e13] disabled:pointer-events-none disabled:opacity-40';
 
   return (
     <>
@@ -162,53 +165,39 @@ export default function Portfolio() {
         description="Explore verified Indian car models, ex-showroom price bands, fuel types, and state-wise on-road price calculators."
       />
 
-      <div className="relative min-h-screen overflow-hidden bg-[#0d0e10] py-8 text-white sm:py-10">
-        {/* Decorative speed panels */}
-        <div aria-hidden="true" className="pointer-events-none absolute -top-28 -right-24 h-[420px] w-[420px] -skew-x-12 bg-gradient-to-br from-[#dc2626]/20 to-transparent" />
-        <div aria-hidden="true" className="pointer-events-none absolute top-72 -left-32 h-64 w-64 -skew-x-12 bg-[#dc2626]/5" />
-
+      <div className="relative min-h-screen bg-[#0a0e13] py-8 text-white sm:py-12" style={body}>
         <div className="relative mx-auto max-w-7xl space-y-6 px-4 sm:px-6 lg:px-8">
-
           {/* ---------- Header ---------- */}
-          <div className="relative overflow-hidden border border-white/10 bg-[#1a1c20] p-6 sm:p-8">
-            <div aria-hidden="true" className="absolute inset-y-0 right-0 hidden w-1/3 -skew-x-12 translate-x-10 bg-gradient-to-l from-[#dc2626]/20 to-transparent md:block" />
-            <div className="relative flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
-              <div>
-                <div className="flex items-center gap-2">
-                  <span aria-hidden="true" className="h-[3px] w-7 -skew-x-[30deg] bg-[#dc2626]" />
-                  <p className="text-xs font-extrabold uppercase tracking-widest text-[#f6c945]">New cars</p>
-                </div>
-                <h1
-                  className="mt-3 text-[clamp(2.25rem,6vw,4.5rem)] font-extrabold italic leading-[1.02] tracking-tight text-white"
-                  style={display}
-                >
-                  Indian car catalog
-                </h1>
-                <p className="mt-3 max-w-2xl text-sm leading-6 text-white/60">
-                  Search by brand, body style, fuel type, and price. Use Price Breakup on any car to calculate state-wise on-road price.
-                </p>
-              </div>
-
-              <div
-                className="relative flex-none self-start bg-[#dc2626] py-4 pl-6 pr-10 text-white md:self-auto md:text-right"
-                style={slant}
+          <header className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+            <div>
+              <h1
+                className="text-[clamp(2rem,5vw,3.75rem)] font-extrabold leading-[1] tracking-[-0.03em] text-white"
+                style={wide}
               >
-                <span className="relative block text-[11px] font-bold uppercase tracking-widest text-white/80">
-                  {totalCount > 0 ? `Showing ${startItem}–${endItem} of` : 'Total'}
-                </span>
-                <span className="relative text-3xl font-extrabold italic tabular-nums" style={display}>
-                  {totalCount} <span className="text-xl">Cars</span>
-                </span>
-              </div>
+                Indian car catalog
+              </h1>
+              <p className="mt-4 max-w-2xl text-base leading-relaxed text-white/65">
+                Search by brand, body style, fuel type and price. Open Price breakup on any car to see its on-road price
+                in your state.
+              </p>
             </div>
-          </div>
+
+            <div className="flex-none self-start rounded-2xl border border-white/15 bg-white/[0.06] px-6 py-4 backdrop-blur-xl md:self-auto md:text-right">
+              <span className="block text-xs text-white/60">
+                {totalCount > 0 ? `Showing ${startItem}–${endItem} of` : 'Total'}
+              </span>
+              <span className="text-3xl font-extrabold tabular-nums tracking-[-0.02em]" style={wide}>
+                {totalCount} <span className="text-lg font-bold text-white/70">cars</span>
+              </span>
+            </div>
+          </header>
 
           {/* ---------- Filters ---------- */}
-          <div className="border border-white/10 bg-[#1a1c20] p-4 sm:p-5">
+          <div className="rounded-3xl border border-white/10 bg-[#11161d] p-4 sm:p-5">
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr_1fr_1fr_auto]">
               <label className="relative sm:col-span-2 lg:col-span-1">
                 <span className="sr-only">Search car model or brand</span>
-                <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#dc2626]" />
+                <Search className="pointer-events-none absolute left-5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#ffb224]" />
                 <input
                   value={searchQuery}
                   onChange={(e) => {
@@ -216,7 +205,7 @@ export default function Portfolio() {
                     setCurrentPage(1);
                   }}
                   placeholder="Search car model or brand"
-                  className={`${fieldBase} border-white/15 bg-[#0d0e10] pl-11 pr-4 placeholder:font-semibold placeholder:text-white/40`}
+                  className={`${fieldBase} border-white/15 pl-12 pr-4 placeholder:font-medium placeholder:text-white/40`}
                 />
               </label>
 
@@ -229,7 +218,7 @@ export default function Portfolio() {
                   setCurrentPage(1);
                 }}
               >
-                <option value="">All Brands</option>
+                <option value="">All brands</option>
                 {brands.map((brand) => <option key={brand.id} value={brand.slug}>{brand.name}</option>)}
               </FilterSelect>
 
@@ -242,7 +231,7 @@ export default function Portfolio() {
                   setCurrentPage(1);
                 }}
               >
-                <option value="">All Body Styles</option>
+                <option value="">All body styles</option>
                 {bodyTypes.map((bodyType) => <option key={bodyType} value={bodyType}>{bodyType}</option>)}
               </FilterSelect>
 
@@ -255,7 +244,7 @@ export default function Portfolio() {
                   setCurrentPage(1);
                 }}
               >
-                <option value="">All Fuel Types</option>
+                <option value="">All fuel types</option>
                 {fuelTypes.map((fuelType) => <option key={fuelType} value={fuelType}>{fuelType}</option>)}
               </FilterSelect>
 
@@ -269,36 +258,34 @@ export default function Portfolio() {
                 }}
               >
                 <option value="name">Name A-Z</option>
-                <option value="starting_price">Price Low-High</option>
-                <option value="-starting_price">Price High-Low</option>
-                <option value="-is_featured">Featured First</option>
+                <option value="starting_price">Price low to high</option>
+                <option value="-starting_price">Price high to low</option>
+                <option value="-is_featured">Featured first</option>
               </FilterSelect>
 
               <button
                 type="button"
                 onClick={handleReset}
-                className={`group relative inline-flex h-12 items-center justify-center gap-2 overflow-hidden bg-[#dc2626] pl-5 pr-7 text-sm font-extrabold italic uppercase tracking-wide text-white transition-all duration-300 hover:bg-[#f6c945] hover:text-[#0d0e10] active:scale-[0.97] ${focusRing}`}
-                style={{ ...slant, ...display }}
+                className={`group inline-flex h-12 items-center justify-center gap-2 rounded-full bg-[#ffb224] px-6 text-sm font-bold text-[#0a0e13] transition-colors duration-200 hover:bg-white active:scale-[0.98] ${focusRing}`}
               >
-                <span aria-hidden="true" className="absolute inset-y-0 -left-1/2 w-1/3 -skew-x-[22deg] bg-white/30 transition-all duration-700 group-hover:left-[130%]" />
-                <RefreshCw className="relative h-4 w-4 transition-transform duration-500 group-hover:rotate-180" />
-                <span className="relative">Reset</span>
+                <RefreshCw className="h-4 w-4 transition-transform duration-500 group-hover:rotate-180" />
+                Reset
               </button>
             </div>
 
             {/* Active filter chips */}
             {activeChips.length > 0 && (
               <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-white/10 pt-4">
-                <span className="text-[11px] font-extrabold uppercase tracking-widest text-white/50">Active</span>
+                <span className="text-sm text-white/55">Filters</span>
                 {activeChips.map((chip) => (
                   <button
                     key={chip.key}
                     type="button"
                     onClick={() => removeChip(chip)}
-                    className={`group inline-flex items-center gap-1.5 border border-[#dc2626]/50 bg-[#dc2626]/10 py-1.5 pl-3.5 pr-2 text-xs font-bold capitalize text-white transition-all hover:border-[#f6c945] hover:bg-[#f6c945] hover:text-[#0d0e10] ${focusRing}`}
+                    className={`group inline-flex items-center gap-2 rounded-full border border-[#ffb224]/50 bg-[#ffb224]/10 py-1.5 pl-4 pr-2 text-sm font-semibold capitalize text-white transition-colors hover:border-[#ffb224] hover:bg-[#ffb224] hover:text-[#0a0e13] ${focusRing}`}
                   >
                     <span>{chip.label}</span>
-                    <span className="grid h-4 w-4 place-items-center bg-[#dc2626] text-white transition-colors group-hover:bg-[#0d0e10]/20 group-hover:text-[#0d0e10]">
+                    <span className="grid h-5 w-5 place-items-center rounded-full bg-[#ffb224] text-[#0a0e13] transition-colors group-hover:bg-[#0a0e13] group-hover:text-[#ffb224]">
                       <X className="h-3 w-3" />
                     </span>
                     <span className="sr-only">Remove filter</span>
@@ -312,7 +299,7 @@ export default function Portfolio() {
           {isLoading ? (
             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4" aria-hidden="true">
               {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((n) => (
-                <div key={n} className="h-96 border border-white/10 bg-[#1a1c20] motion-safe:animate-pulse" />
+                <div key={n} className="h-96 rounded-3xl border border-white/10 bg-[#11161d] motion-safe:animate-pulse" />
               ))}
             </div>
           ) : vehicles.length > 0 ? (
@@ -322,9 +309,9 @@ export default function Portfolio() {
               </div>
 
               {/* ---------- Pagination ---------- */}
-              <div className="mt-8 flex flex-col items-center justify-between gap-4 border border-white/10 bg-[#1a1c20] p-4 sm:flex-row sm:p-5">
+              <div className="mt-8 flex flex-col items-center justify-between gap-4 rounded-3xl border border-white/10 bg-[#11161d] p-4 sm:flex-row sm:p-5">
                 <div className="flex flex-wrap items-center justify-center gap-3 text-sm text-white/60 sm:justify-start">
-                  <span className="font-bold text-white/50">Per page</span>
+                  <span className="font-semibold text-white/60">Per page</span>
                   <label className="relative">
                     <span className="sr-only">Cars per page</span>
                     <select
@@ -333,16 +320,16 @@ export default function Portfolio() {
                         setPageSize(e.target.value === 'all' ? 'all' : Number(e.target.value));
                         setCurrentPage(1);
                       }}
-                      className="h-9 cursor-pointer appearance-none border border-white/15 bg-[#0d0e10] pl-3 pr-8 text-sm font-bold text-white outline-none transition-all hover:border-[#dc2626]/70 focus:border-[#f6c945] focus:ring-2 focus:ring-[#f6c945]/30 [&>option]:bg-[#1a1c20] [&>option]:text-white"
+                      className="h-10 cursor-pointer appearance-none rounded-full border border-white/15 bg-white/[0.06] pl-4 pr-9 text-sm font-semibold text-white outline-none transition-colors hover:border-white/40 focus:border-[#ffb224] focus:ring-2 focus:ring-[#ffb224]/30 [&>option]:bg-[#11161d] [&>option]:text-white"
                     >
                       <option value={12}>12</option>
                       <option value={24}>24</option>
                       <option value={48}>48</option>
                       <option value="all">All ({totalCount})</option>
                     </select>
-                    <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-white/50" />
+                    <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-white/50" />
                   </label>
-                  <span aria-hidden="true" className="hidden h-5 w-px -skew-x-12 bg-white/20 sm:inline-block" />
+                  <span aria-hidden="true" className="hidden h-5 w-px bg-white/15 sm:inline-block" />
                   <span>
                     Showing <strong className="text-white">{startItem}–{endItem}</strong> of <strong className="text-white">{totalCount}</strong> cars
                   </span>
@@ -367,16 +354,16 @@ export default function Portfolio() {
                           type="button"
                           onClick={() => handlePageChange(page)}
                           aria-current={currentPage === page ? 'page' : undefined}
-                          className={`h-9 min-w-[36px] px-2.5 text-xs font-extrabold transition-all duration-200 ${focusRing} ${currentPage === page
-                              ? 'bg-[#dc2626] pr-4 text-white'
-                              : 'border border-white/15 text-white hover:border-[#f6c945] hover:bg-[#f6c945] hover:text-[#0d0e10]'
-                            }`}
-                          style={currentPage === page ? slant : undefined}
+                          className={`h-10 min-w-[40px] rounded-full px-3 text-sm font-bold transition-colors duration-200 ${focusRing} ${
+                            currentPage === page
+                              ? 'bg-[#ffb224] text-[#0a0e13]'
+                              : 'border border-white/15 text-white hover:border-[#ffb224] hover:bg-[#ffb224] hover:text-[#0a0e13]'
+                          }`}
                         >
                           {page}
                         </button>
                       ) : (
-                        <span key={`ellipsis-${idx}`} className="px-1 text-xs font-bold text-white/40">
+                        <span key={`ellipsis-${idx}`} className="px-1 text-sm font-semibold text-white/40">
                           …
                         </span>
                       )
@@ -396,24 +383,23 @@ export default function Portfolio() {
               </div>
             </>
           ) : (
-            <div className="relative overflow-hidden border border-white/10 bg-[#1a1c20] p-12 text-center">
-              <div aria-hidden="true" className="absolute -right-10 -top-10 h-40 w-40 -skew-x-12 bg-[#dc2626]/15" />
-              <span className="relative mx-auto grid h-16 w-16 place-items-center bg-[#dc2626]/15 text-[#dc2626]" style={slant}>
+            <div className="rounded-3xl border border-white/10 bg-[#11161d] p-12 text-center">
+              <span className="mx-auto grid h-16 w-16 place-items-center rounded-full border border-white/15 bg-white/[0.04] text-[#ffb224]">
                 <Car className="h-8 w-8" />
               </span>
-              <h3 className="relative mt-5 text-3xl font-extrabold italic tracking-tight text-white" style={display}>
+              <h3 className="mt-5 text-2xl font-extrabold tracking-[-0.02em] text-white sm:text-3xl" style={wide}>
                 No cars found
               </h3>
-              <p className="relative mt-2 text-sm text-white/60">Try a different brand, model, body style, or fuel filter.</p>
+              <p className="mx-auto mt-2 max-w-md text-white/65">
+                Try a different brand, model, body style or fuel type, or clear your filters.
+              </p>
               <button
                 type="button"
                 onClick={handleReset}
-                className={`group relative mt-6 inline-flex items-center gap-2 overflow-hidden bg-[#dc2626] py-3 pl-6 pr-8 text-sm font-extrabold italic uppercase tracking-wide text-white transition-all duration-300 hover:bg-[#f6c945] hover:text-[#0d0e10] active:scale-[0.97] ${focusRing}`}
-                style={{ ...slant, ...display }}
+                className={`group mt-6 inline-flex h-12 items-center gap-2 rounded-full bg-[#ffb224] px-7 text-[15px] font-bold text-[#0a0e13] transition-colors duration-200 hover:bg-white active:scale-[0.98] ${focusRing}`}
               >
-                <span aria-hidden="true" className="absolute inset-y-0 -left-1/2 w-1/3 -skew-x-[22deg] bg-white/40 transition-all duration-700 group-hover:left-[130%]" />
-                <RefreshCw className="relative h-4 w-4 transition-transform duration-500 group-hover:rotate-180" />
-                <span className="relative">Clear filters</span>
+                <RefreshCw className="h-4 w-4 transition-transform duration-500 group-hover:rotate-180" />
+                Clear filters
               </button>
             </div>
           )}

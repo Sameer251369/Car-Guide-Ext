@@ -2,15 +2,23 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowUpRight,
   Calculator,
+  Car,
+  CarFront,
+  Check,
+  Cog,
+  Droplets,
   Fuel,
   Gauge,
   Layers,
+  Leaf,
   ListChecks,
+  Mountain,
   Ruler,
   Search,
   Settings2,
   ShieldCheck,
   Tag,
+  Zap,
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -18,18 +26,25 @@ import api from '../api/client';
 import HeroMedia from '../components/HeroMedia';
 import SEOHead from '../components/SEOHead';
 
+/* ------------------------------------------------------------------ */
+/*  Tokens                                                             */
+/*  ink #0a0e13 · panel #11161d · concrete #dfe3e6 · sodium #ffb224    */
+/* ------------------------------------------------------------------ */
+
 const ROUTES = { vehicles: '/vehicles', calculator: '/calculator', compare: '/compare' };
 
 const categories = [
-  { label: 'SUV', to: '/vehicles?search=SUV' },
-  { label: 'Hatchback', to: '/vehicles?search=Hatchback' },
-  { label: 'Sedan', to: '/vehicles?search=Sedan' },
-  { label: 'Electric', to: '/vehicles?search=Electric' },
-  { label: 'CNG', to: '/vehicles?search=CNG' },
-  { label: 'Petrol', to: '/vehicles?search=Petrol' },
-  { label: 'Diesel', to: '/vehicles?search=Diesel' },
-  { label: 'Automatic', to: '/vehicles?search=Automatic' },
+  { label: 'SUV', to: '/vehicles?search=SUV', icon: Mountain },
+  { label: 'Hatchback', to: '/vehicles?search=Hatchback', icon: CarFront },
+  { label: 'Sedan', to: '/vehicles?search=Sedan', icon: Car },
+  { label: 'Electric', to: '/vehicles?search=Electric', icon: Zap },
+  { label: 'CNG', to: '/vehicles?search=CNG', icon: Leaf },
+  { label: 'Petrol', to: '/vehicles?search=Petrol', icon: Fuel },
+  { label: 'Diesel', to: '/vehicles?search=Diesel', icon: Droplets },
+  { label: 'Automatic', to: '/vehicles?search=Automatic', icon: Cog },
 ];
+
+const quickLinks = categories.filter((c) => ['SUV', 'Hatchback', 'Sedan', 'Electric', 'Automatic'].includes(c.label));
 
 const specs = [
   { icon: Gauge, title: 'Performance', text: 'Power, torque and engine options.' },
@@ -41,16 +56,36 @@ const specs = [
   { icon: Tag, title: 'Prices', text: 'Ex-showroom and on-road figures.' },
 ];
 
-const display = { fontFamily: "'Barlow Condensed','Oswald','Arial Narrow',sans-serif" };
-const body = { fontFamily: "'Barlow','Inter',system-ui,sans-serif" };
+const priceIncludes = [
+  'Ex-showroom price',
+  'Road tax for your state',
+  'Insurance',
+  'Registration and other charges',
+];
+
+const compareRows = [
+  { label: 'Price', a: 64, b: 78 },
+  { label: 'Mileage', a: 82, b: 58 },
+  { label: 'Safety', a: 90, b: 72 },
+  { label: 'Boot space', a: 55, b: 70 },
+];
+
+const heroWords = ['SUV.', 'Sedan.', 'EV.', 'Hatchback.'];
+
+const wide = { fontFamily: "'Archivo','Arial Black',system-ui,sans-serif", fontStretch: '125%' };
+const body = { fontFamily: "'Hanken Grotesk','Inter',system-ui,sans-serif" };
 
 const focusRing =
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f6c945] focus-visible:ring-offset-2';
-const slant = { clipPath: 'polygon(14px 0, 100% 0, calc(100% - 14px) 100%, 0 100%)' };
-const btnBase = `inline-flex h-14 items-center justify-center gap-2 px-9 text-lg font-bold italic tracking-wide transition-colors ${focusRing}`;
-const btnPrimary = `${btnBase} bg-[#dc2626] text-white hover:bg-[#f6c945] hover:text-[#0d0e10] focus-visible:ring-offset-[#0d0e10]`;
-const btnGhost = `${btnBase} bg-white/10 text-white backdrop-blur-md hover:bg-white hover:text-[#0d0e10] focus-visible:ring-offset-[#0d0e10]`;
-const btnLight = `${btnBase} bg-[#0d0e10] text-white hover:bg-[#dc2626] focus-visible:ring-offset-[#f1efea]`;
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ffb224] focus-visible:ring-offset-2';
+const btnBase = `inline-flex h-12 items-center justify-center gap-2 rounded-full px-7 text-[15px] font-semibold transition-colors duration-300 ${focusRing}`;
+const btnPrimary = `${btnBase} bg-[#ffb224] text-[#0a0e13] hover:bg-white focus-visible:ring-offset-[#0a0e13]`;
+const btnDark = `${btnBase} bg-[#0a0e13] text-white hover:bg-[#1d2733] focus-visible:ring-offset-[#dfe3e6]`;
+const chip =
+  'inline-flex h-10 items-center gap-2 rounded-full border border-white/15 bg-white/[0.06] px-4 text-sm font-semibold text-white/90 backdrop-blur-xl transition-colors hover:border-[#ffb224] hover:bg-[#ffb224] hover:text-[#0a0e13]';
+
+/* ------------------------------------------------------------------ */
+/*  Helpers                                                            */
+/* ------------------------------------------------------------------ */
 
 const toNumber = (v) => Number(v?.starting_price ?? v?.ex_showroom_price);
 
@@ -109,19 +144,43 @@ const arc = (cx, cy, r, from, to) => {
   return `M ${x1} ${y1} A ${r} ${r} 0 ${to - from > 180 ? 1 : 0} 1 ${x2} ${y2}`;
 };
 
+/* ------------------------------------------------------------------ */
+/*  Price gauge                                                        */
+/* ------------------------------------------------------------------ */
+
 function PriceGauge() {
   const [ref, seen] = useInView(0.4);
   const ticks = Array.from({ length: 25 }, (_, i) => -120 + i * 10);
   return (
     <div ref={ref} className="mx-auto w-full max-w-[460px]">
-      <svg viewBox="0 0 400 330" role="img" aria-label="Gauge illustrating how ex-showroom price builds up to the on-road price">
-        <circle cx="200" cy="200" r="178" fill="#15171a" stroke="#2a2d33" strokeWidth="2" />
-        <path d={arc(200, 200, 150, -120, 120)} stroke="#2a2d33" strokeWidth="14" fill="none" strokeLinecap="round" />
-        <path d={arc(200, 200, 150, 60, 120)} stroke="#dc2626" strokeWidth="14" fill="none" strokeLinecap="round" />
+      <svg
+        viewBox="0 0 400 330"
+        role="img"
+        aria-label="Gauge illustrating how ex-showroom price builds up to the on-road price"
+      >
+        <circle cx="200" cy="200" r="180" fill="#0a0e13" />
+        <circle cx="200" cy="200" r="180" fill="none" stroke="#3a4350" strokeWidth="2" />
+        <circle cx="200" cy="200" r="168" fill="none" stroke="#1d2733" strokeWidth="1" />
+
+        {/* track */}
+        <path d={arc(200, 200, 150, -120, 120)} stroke="#1d2733" strokeWidth="12" fill="none" strokeLinecap="round" />
+        {/* animated fill */}
+        <path
+          d={arc(200, 200, 150, -120, 78)}
+          pathLength="100"
+          stroke="#ffb224"
+          strokeWidth="12"
+          fill="none"
+          strokeLinecap="round"
+          strokeDasharray="100"
+          strokeDashoffset={seen ? 0 : 100}
+          style={{ transition: 'stroke-dashoffset 1800ms cubic-bezier(0.2, 0.8, 0.2, 1)' }}
+        />
+
         {ticks.map((deg, i) => {
           const major = i % 3 === 0;
-          const [x1, y1] = polar(200, 200, major ? 124 : 132, deg);
-          const [x2, y2] = polar(200, 200, 142, deg);
+          const [x1, y1] = polar(200, 200, major ? 118 : 126, deg);
+          const [x2, y2] = polar(200, 200, 136, deg);
           return (
             <line
               key={deg}
@@ -129,12 +188,13 @@ function PriceGauge() {
               y1={y1}
               x2={x2}
               y2={y2}
-              stroke={deg >= 60 ? '#dc2626' : '#f1efea'}
+              stroke={deg >= 60 ? '#ff4d3d' : '#dfe3e6'}
               strokeWidth={major ? 3 : 1.5}
-              opacity={major ? 0.9 : 0.45}
+              opacity={major ? 0.95 : 0.4}
             />
           );
         })}
+
         <g
           style={{
             transformOrigin: '200px 200px',
@@ -142,19 +202,32 @@ function PriceGauge() {
             transition: 'transform 1800ms cubic-bezier(0.2, 0.8, 0.2, 1)',
           }}
         >
-          <polygon points="196,208 204,208 201,66 199,66" fill="#f6c945" />
+          <polygon points="196,208 204,208 201,70 199,70" fill="#ffffff" />
         </g>
-        <circle cx="200" cy="200" r="16" fill="#0d0e10" stroke="#f6c945" strokeWidth="3" />
-        <text x="200" y="262" textAnchor="middle" fill="#f1efea" fontSize="40" fontWeight="800" fontStyle="italic" style={display}>
+        <circle cx="200" cy="200" r="16" fill="#0a0e13" stroke="#ffb224" strokeWidth="3" />
+
+        <text
+          x="200"
+          y="262"
+          textAnchor="middle"
+          fill="#ffffff"
+          fontSize="34"
+          fontWeight="800"
+          style={{ ...wide, letterSpacing: '-0.02em' }}
+        >
           On-road
         </text>
-        <text x="200" y="292" textAnchor="middle" fill="#f1efea" opacity="0.6" fontSize="18" style={body}>
+        <text x="200" y="292" textAnchor="middle" fill="#dfe3e6" opacity="0.65" fontSize="16" style={body}>
           your state, city and variant
         </text>
       </svg>
     </div>
   );
 }
+
+/* ------------------------------------------------------------------ */
+/*  Popular car card                                                   */
+/* ------------------------------------------------------------------ */
 
 function PopularCard({ vehicle }) {
   const img = vehicleImage(vehicle);
@@ -170,11 +243,9 @@ function PopularCard({ vehicle }) {
     <Link
       to={href}
       aria-label={`${title}, view details`}
-      className={`group relative flex h-full flex-col bg-[#1a1c20] text-[#f1efea] transition-transform duration-300 hover:-translate-y-1 ${focusRing} focus-visible:ring-offset-[#0d0e10]`}
-      style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 28px), calc(100% - 28px) 100%, 0 100%)' }}
+      className={`group relative flex h-full flex-col overflow-hidden rounded-3xl border border-white/10 bg-[#11161d] text-white ${focusRing} focus-visible:ring-offset-[#0a0e13]`}
     >
-      <span aria-hidden="true" className="absolute left-0 top-0 z-10 h-full w-1 bg-[#dc2626] transition-all duration-300 group-hover:w-1.5 group-hover:bg-[#f6c945]" />
-      <div className="relative aspect-[16/10] overflow-hidden bg-[radial-gradient(ellipse_at_50%_90%,#2b2e35,#14161a)]">
+      <div className="relative aspect-[4/3] overflow-hidden bg-[radial-gradient(ellipse_at_50%_100%,#2a3340,#0f141a)]">
         {img ? (
           <img
             src={img}
@@ -185,27 +256,36 @@ function PopularCard({ vehicle }) {
         ) : (
           <div className="flex h-full items-center justify-center text-sm text-white/40">No image</div>
         )}
-        <div aria-hidden="true" className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-[#1a1c20] to-transparent" />
+        <div aria-hidden="true" className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-[#11161d] to-transparent" />
+        <span
+          aria-hidden="true"
+          className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-black/30 text-white backdrop-blur-xl transition-colors group-hover:border-[#ffb224] group-hover:bg-[#ffb224] group-hover:text-[#0a0e13]"
+        >
+          <ArrowUpRight className="h-5 w-5" />
+        </span>
       </div>
-      <div className="flex flex-1 flex-col px-6 pb-8 pt-4">
-        <h3 className="text-[1.7rem] font-extrabold italic leading-none tracking-tight" style={display}>
+
+      <div className="flex flex-1 flex-col px-5 pb-6 pt-3">
+        <h3 className="text-xl font-extrabold leading-tight tracking-[-0.02em]" style={wide}>
           {title}
         </h3>
-        <p className="mt-4 text-sm text-white/55" style={body}>Starting at</p>
-        <p className="text-[2rem] font-bold leading-tight text-[#f6c945]" style={display}>
+        <p className="mt-4 text-sm text-white/55" style={body}>
+          Starting at
+        </p>
+        <p className="text-2xl font-bold leading-tight text-white" style={wide}>
           {price || 'Price on request'}
         </p>
         {(fuel || transmission) && (
-          <div className="mt-5 flex divide-x divide-white/15 border-t border-white/15 pt-4 text-sm" style={body}>
+          <div className="mt-5 flex flex-wrap gap-2 text-sm" style={body}>
             {fuel && (
-              <span className="flex items-center gap-2 pr-4">
-                <Fuel className="h-4 w-4 text-[#dc2626]" aria-hidden="true" />
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 px-3 py-1 text-white/80">
+                <Fuel className="h-3.5 w-3.5 text-[#ffb224]" aria-hidden="true" />
                 {fuel}
               </span>
             )}
             {transmission && (
-              <span className={`flex items-center gap-2 ${fuel ? 'pl-4' : ''}`}>
-                <Settings2 className="h-4 w-4 text-[#dc2626]" aria-hidden="true" />
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 px-3 py-1 text-white/80">
+                <Settings2 className="h-3.5 w-3.5 text-[#ffb224]" aria-hidden="true" />
                 {transmission}
               </span>
             )}
@@ -216,17 +296,24 @@ function PopularCard({ vehicle }) {
   );
 }
 
+/* ------------------------------------------------------------------ */
+/*  Page                                                               */
+/* ------------------------------------------------------------------ */
+
 export default function Home() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
-  
-  const dynamicWords = ['SUVs.', 'Sedans.', 'Electric.', 'Real Prices.'];
   const [wordIndex, setWordIndex] = useState(0);
 
   useEffect(() => {
+    const reduce =
+      typeof window !== 'undefined' &&
+      window.matchMedia &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce) return undefined;
     const interval = setInterval(() => {
-      setWordIndex((prev) => (prev + 1) % dynamicWords.length);
-    }, 2500);
+      setWordIndex((prev) => (prev + 1) % heroWords.length);
+    }, 2600);
     return () => clearInterval(interval);
   }, []);
 
@@ -258,97 +345,119 @@ export default function Home() {
   };
 
   const container = 'mx-auto w-full max-w-[1320px] px-5 sm:px-8 lg:px-12';
-  const h2 = 'font-extrabold italic leading-[0.92] tracking-[-0.01em]';
+  const h2 = 'font-extrabold leading-[1] tracking-[-0.025em]';
+  const h2Size = 'text-[clamp(1.9rem,4.4vw,3.75rem)]';
 
   return (
-    <div className="bg-[#0d0e10] text-[#f1efea]" style={body}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@1,700;1,800;1,900&family=Barlow:wght@400;500;600&display=swap');`}</style>
+    <div className="bg-[#0a0e13] text-[#eef1f3]" style={body}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,500..900&family=Hanken+Grotesk:wght@400;500;600;700&display=swap');
+        @keyframes cg-rise { from { opacity: 0; transform: translateY(28px); } to { opacity: 1; transform: none; } }
+        @keyframes cg-word { from { opacity: 0; transform: translateY(45%); clip-path: inset(0 0 100% 0); } to { opacity: 1; transform: none; clip-path: inset(0 0 0 0); } }
+        @media (prefers-reduced-motion: no-preference) {
+          .cg-rise { animation: cg-rise 900ms cubic-bezier(0.2, 0.8, 0.2, 1) both; animation-delay: var(--d, 0ms); }
+          .cg-word { animation: cg-word 700ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+        }
+      `}</style>
 
       <SEOHead
         title="Find Your Car. Know the Real Price. | Car Guide Media"
         description="Explore cars, compare specifications, discover variants, and calculate the on-road price for your state — all in one place."
       />
 
-      {/* HERO SECTION - Text positioned higher up, search & buttons near the bottom */}
-      <section className="relative overflow-hidden bg-[#0d0e10] text-white" aria-labelledby="home-hero-title">
+      {/* HERO */}
+      <section className="relative overflow-hidden bg-[#0a0e13] text-white" aria-labelledby="home-hero-title">
         <HeroMedia>
-          <div className={`relative flex min-h-[100svh] flex-col justify-between pb-12 pt-28 ${container}`}>
-            {/* Subtle bottom gradient only for inputs legibility */}
-            <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-[#0d0e10]/80 via-transparent to-transparent" />
+          <div className={`relative flex min-h-[100svh] flex-col justify-end pb-10 pt-28 sm:pb-14 ${container}`}>
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#0a0e13] via-[#0a0e13]/35 to-[#0a0e13]/30"
+            />
 
-            {/* Upper part: Dynamic Title moved higher up */}
-            <div className="relative w-full max-w-[720px] pt-4">
+            <div className="relative max-w-[1000px]">
               <h1
                 id="home-hero-title"
-                className="text-[clamp(2.75rem,min(8vw,10vh),6rem)] font-black italic leading-[0.9] tracking-[-0.015em]"
-                style={display}
+                className="text-[clamp(2.25rem,7vw,6.25rem)] font-black leading-[1.02] tracking-[-0.03em]"
+                style={wide}
               >
-                Find your drive. <br />
-                <span className="text-[#f6c945] transition-all duration-500">
-                  {dynamicWords[wordIndex]}
+                <span className="cg-rise block" style={{ '--d': '80ms' }}>
+                  Find your next
                 </span>
-              </h1>
-            </div>
-
-            {/* Lower part: Search box and action buttons pinned lower down */}
-            <div className="relative w-full max-w-[720px] pb-4">
-              <form onSubmit={handleSearch} role="search">
-                <label htmlFor="home-search" className="sr-only">Search for a car, brand or model</label>
-                <div className="flex h-14 items-stretch overflow-hidden rounded-md bg-[#f6f3e7] shadow-[0_20px_50px_-15px_rgba(0,0,0,0.8)]">
-                  <span className="flex w-11 shrink-0 flex-col items-center justify-center bg-[#1d3f9e] text-[10px] font-bold leading-tight text-white" aria-hidden="true">
-                    <span className="mb-0.5 h-2.5 w-2.5 rounded-full border border-dashed border-[#f6c945]" />
-                    IND
+                <span className="cg-rise block overflow-hidden pb-[0.08em]" style={{ '--d': '220ms' }} aria-hidden="true">
+                  <span key={wordIndex} className="cg-word block">
+                    {heroWords[wordIndex]}
                   </span>
-                  <input
-                    id="home-search"
-                    type="search"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search car, brand or model..."
-                    className="h-full min-w-0 flex-1 bg-transparent px-4 text-xl font-bold italic tracking-wide text-[#0d0e10] placeholder:text-[#0d0e10]/40 focus:outline-none sm:text-2xl"
-                    style={display}
-                  />
-                  <button
-                    type="submit"
-                    className={`flex shrink-0 items-center gap-2 bg-[#dc2626] px-5 text-lg font-bold italic text-white transition-colors hover:bg-[#0d0e10] sm:px-7 ${focusRing} focus-visible:ring-inset`}
-                    style={display}
-                  >
-                    <Search className="h-5 w-5" aria-hidden="true" />
-                    <span className="hidden sm:inline">Search</span>
-                  </button>
-                </div>
-              </form>
+                </span>
+                <span className="sr-only">SUV, sedan, EV or hatchback.</span>
+              </h1>
 
-              <div className="mt-4 flex flex-col gap-3 sm:flex-row">
-                <Link to={ROUTES.vehicles} className={`${btnPrimary} w-full sm:flex-1`} style={{ ...slant, ...display }}>
-                  Explore cars
-                  <ArrowUpRight className="h-5 w-5" aria-hidden="true" />
-                </Link>
-                <Link to={ROUTES.calculator} className={`${btnGhost} w-full sm:flex-1`} style={{ ...slant, ...display }}>
-                  <Calculator className="h-5 w-5" aria-hidden="true" />
-                  On-road price
-                </Link>
+              <p
+                className="cg-rise mt-5 max-w-[48ch] text-base leading-relaxed text-white/75 sm:text-lg"
+                style={{ '--d': '360ms' }}
+              >
+                Specs, variants and the real on-road price for your state, in one place.
+              </p>
+
+              <div className="cg-rise mt-8 max-w-[720px]" style={{ '--d': '480ms' }}>
+                <form onSubmit={handleSearch} role="search">
+                  <label htmlFor="home-search" className="sr-only">
+                    Search for a car, brand or model
+                  </label>
+                  <div className="flex h-16 items-center gap-3 rounded-full border border-white/20 bg-white/10 pl-6 pr-2 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.8)] backdrop-blur-2xl focus-within:border-[#ffb224]">
+                    <Search className="h-5 w-5 shrink-0 text-white/60" aria-hidden="true" />
+                    <input
+                      id="home-search"
+                      type="search"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Search car, brand or model"
+                      className="h-full min-w-0 flex-1 bg-transparent text-lg text-white placeholder:text-white/50 focus:outline-none"
+                    />
+                    <button
+                      type="submit"
+                      className={`inline-flex h-12 shrink-0 items-center gap-2 rounded-full bg-[#ffb224] px-6 text-[15px] font-semibold text-[#0a0e13] transition-colors hover:bg-white ${focusRing} focus-visible:ring-offset-0`}
+                    >
+                      Search
+                    </button>
+                  </div>
+                </form>
+
+                <ul className="mt-4 flex flex-wrap items-center gap-2">
+                  {quickLinks.map(({ label, to }) => (
+                    <li key={label}>
+                      <Link to={to} className={`${chip} ${focusRing} focus-visible:ring-offset-[#0a0e13]`}>
+                        {label}
+                      </Link>
+                    </li>
+                  ))}
+                  <li>
+                    <Link
+                      to={ROUTES.vehicles}
+                      className={`inline-flex h-10 items-center gap-1.5 rounded-full px-3 text-sm font-semibold text-white underline decoration-[#ffb224] decoration-2 underline-offset-4 transition-colors hover:text-[#ffb224] ${focusRing} focus-visible:ring-offset-[#0a0e13]`}
+                    >
+                      Browse all cars
+                      <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
+                    </Link>
+                  </li>
+                </ul>
               </div>
             </div>
           </div>
         </HeroMedia>
       </section>
 
-      {/* BODY STYLE STRIP */}
-      <section className="border-y border-white/10 bg-[#14161a]" aria-labelledby="explore-title">
+      {/* BROWSE BY TYPE */}
+      <section className="border-y border-white/10 bg-[#0f141b]" aria-labelledby="explore-title">
         <div className={`${container} py-8 sm:py-10`}>
-          <h2 id="explore-title" className={`text-3xl sm:text-4xl ${h2}`} style={display}>
-            Pick your lane
+          <h2 id="explore-title" className="text-2xl font-extrabold tracking-[-0.02em] sm:text-3xl" style={wide}>
+            Browse by type
           </h2>
           <ul className="mt-5 flex gap-3 overflow-x-auto pb-2 [scrollbar-width:none] sm:flex-wrap sm:overflow-visible">
-            {categories.map((c) => (
-              <li key={c.label} className="shrink-0">
-                <Link
-                  to={c.to}
-                  className={`group flex h-12 items-center gap-3 border border-white/20 px-5 text-xl font-bold italic transition-colors hover:border-[#dc2626] hover:bg-[#dc2626] ${focusRing} focus-visible:ring-offset-[#14161a]`}
-                  style={{ ...slant, ...display }}
-                >
-                  {c.label}
+            {categories.map(({ label, to, icon: Icon }) => (
+              <li key={label} className="shrink-0">
+                <Link to={to} className={`${chip} h-12 px-5 text-base ${focusRing} focus-visible:ring-offset-[#0f141b]`}>
+                  <Icon className="h-4 w-4" aria-hidden="true" />
+                  {label}
                 </Link>
               </li>
             ))}
@@ -359,14 +468,13 @@ export default function Home() {
       {/* POPULAR CARS */}
       <section className="py-16 sm:py-24" aria-labelledby="popular-title">
         <div className={container}>
-          <header className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-            <h2 id="popular-title" className={`text-[clamp(2.5rem,6vw,5rem)] ${h2}`} style={display}>
+          <header className="mb-10 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <h2 id="popular-title" className={`${h2Size} ${h2}`} style={wide}>
               Popular cars
             </h2>
             <Link
               to={ROUTES.vehicles}
-              className={`inline-flex items-center gap-1.5 rounded-sm text-lg font-bold italic underline decoration-[#dc2626] decoration-4 underline-offset-8 transition-colors hover:text-[#f6c945] ${focusRing} focus-visible:ring-offset-[#0d0e10]`}
-              style={display}
+              className={`inline-flex items-center gap-1.5 rounded-full text-base font-semibold underline decoration-[#ffb224] decoration-2 underline-offset-8 transition-colors hover:text-[#ffb224] ${focusRing} focus-visible:ring-offset-[#0a0e13]`}
             >
               See every car <ArrowUpRight className="h-5 w-5" aria-hidden="true" />
             </Link>
@@ -376,17 +484,31 @@ export default function Home() {
             {isLoading && (
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4" aria-hidden="true">
                 {Array.from({ length: 8 }, (_, i) => (
-                  <div key={i} className="aspect-[4/5] bg-[#1a1c20] motion-safe:animate-pulse" />
+                  <div key={i} className="aspect-[4/5] rounded-3xl bg-white/5 motion-safe:animate-pulse" />
                 ))}
               </div>
             )}
 
             {!isLoading && isError && (
-              <div className="border border-white/15 bg-[#1a1c20] p-8">
-                <h3 className="text-3xl font-extrabold italic" style={display}>Cars couldn’t load.</h3>
-                <button type="button" onClick={() => refetch()} className={`${btnPrimary} mt-4`} style={{ ...slant, ...display }}>
+              <div className="rounded-3xl border border-white/15 bg-[#11161d] p-8">
+                <h3 className="text-2xl font-extrabold tracking-[-0.02em]" style={wide}>
+                  Cars couldn’t load
+                </h3>
+                <p className="mt-2 text-white/65">Check your connection, then try again.</p>
+                <button type="button" onClick={() => refetch()} className={`${btnPrimary} mt-5`}>
                   Try again
                 </button>
+              </div>
+            )}
+
+            {!isLoading && !isError && popular.length === 0 && (
+              <div className="rounded-3xl border border-white/15 bg-[#11161d] p-8">
+                <h3 className="text-2xl font-extrabold tracking-[-0.02em]" style={wide}>
+                  No cars to show yet
+                </h3>
+                <Link to={ROUTES.vehicles} className={`${btnPrimary} mt-5`}>
+                  Browse all cars
+                </Link>
               </div>
             )}
 
@@ -401,17 +523,27 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ON-ROAD PRICE: gauge */}
-      <section className="relative overflow-hidden bg-[#14161a] py-16 sm:py-24" aria-labelledby="onroad-title">
-        <div className={`${container} relative grid gap-12 lg:grid-cols-[1.1fr_1fr] lg:items-center`}>
+      {/* ON-ROAD PRICE */}
+      <section className="relative overflow-hidden bg-[#dfe3e6] py-16 text-[#0a0e13] sm:py-24" aria-labelledby="onroad-title">
+        <div className={`${container} grid gap-12 lg:grid-cols-[1.1fr_1fr] lg:items-center`}>
           <div>
-            <h2 id="onroad-title" className={`text-[clamp(2.5rem,6vw,5.5rem)] ${h2}`} style={display}>
+            <h2 id="onroad-title" className={`max-w-[18ch] ${h2Size} ${h2}`} style={wide}>
               Know what your car really costs
             </h2>
-            <p className="mt-4 max-w-[46ch] text-base leading-snug text-white/75 sm:text-lg">
-              Calculate an estimated on-road price based on your state, city and selected variant.
+            <p className="mt-5 max-w-[46ch] text-base leading-relaxed text-[#0a0e13]/75 sm:text-lg">
+              The sticker price is only the start. Get an estimated on-road price for your state, city and variant.
             </p>
-            <Link to={ROUTES.calculator} className={`${btnPrimary} mt-6`} style={{ ...slant, ...display }}>
+            <ul className="mt-6 grid gap-3 sm:grid-cols-2">
+              {priceIncludes.map((item) => (
+                <li key={item} className="flex items-center gap-3 text-[15px] font-medium">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#0a0e13] text-[#ffb224]">
+                    <Check className="h-3.5 w-3.5" aria-hidden="true" />
+                  </span>
+                  {item}
+                </li>
+              ))}
+            </ul>
+            <Link to={ROUTES.calculator} className={`${btnDark} mt-8`}>
               <Calculator className="h-5 w-5" aria-hidden="true" />
               Calculate on-road price
             </Link>
@@ -422,48 +554,92 @@ export default function Home() {
 
       {/* SPECIFICATIONS */}
       <section className="py-16 sm:py-24" aria-labelledby="specs-title">
-        <div className={container}>
-          <h2 id="specs-title" className={`max-w-[20ch] text-[clamp(2.5rem,6vw,5rem)] ${h2}`} style={display}>
-            Everything you need before you buy
-          </h2>
-          <ul className="mt-10 grid border-l border-t border-white/12 sm:grid-cols-2 lg:grid-cols-4">
+        <div className={`${container} grid gap-10 lg:grid-cols-[1fr_1.2fr] lg:gap-20`}>
+          <div className="lg:sticky lg:top-28 lg:self-start">
+            <h2 id="specs-title" className={`max-w-[16ch] ${h2Size} ${h2}`} style={wide}>
+              Everything you need before you buy
+            </h2>
+            <p className="mt-5 max-w-[40ch] text-base leading-relaxed text-white/65 sm:text-lg">
+              Every car page covers the same seven things, so you can judge them on equal terms.
+            </p>
+          </div>
+          <ul className="divide-y divide-white/10 border-y border-white/10">
             {specs.map(({ icon: Icon, title, text }) => (
-              <li key={title} className="group border-b border-r border-white/12 p-6 transition-colors hover:bg-[#1a1c20]">
-                <Icon className="h-7 w-7 text-[#dc2626] transition-colors group-hover:text-[#f6c945]" aria-hidden="true" />
-                <h3 className="mt-4 text-2xl font-extrabold italic leading-none" style={display}>{title}</h3>
-                <p className="mt-2 text-sm leading-snug text-white/65">{text}</p>
+              <li key={title} className="flex items-center gap-5 py-5">
+                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/[0.04] text-[#ffb224]">
+                  <Icon className="h-5 w-5" aria-hidden="true" />
+                </span>
+                <div>
+                  <h3 className="text-lg font-bold tracking-[-0.01em]" style={wide}>
+                    {title}
+                  </h3>
+                  <p className="mt-0.5 text-sm text-white/65 sm:text-base">{text}</p>
+                </div>
               </li>
             ))}
           </ul>
         </div>
       </section>
 
-      {/* COMPARE: split screen */}
-      <section className="relative overflow-hidden bg-[#f1efea] text-[#0d0e10]" aria-labelledby="compare-title">
-        <div aria-hidden="true" className="absolute inset-y-0 right-0 hidden w-[42%] -skew-x-[14deg] translate-x-16 bg-[#dc2626] lg:block" />
-        <div className={`${container} relative flex flex-col gap-6 py-16 sm:py-20 lg:flex-row lg:items-center lg:justify-between`}>
-          <div>
-            <h2 id="compare-title" className={`text-[clamp(2.5rem,6vw,5.5rem)] ${h2}`} style={display}>
-              Compare cars side by side
-            </h2>
-            <p className="mt-3 max-w-[46ch] text-base text-black/70 sm:text-lg">
-              Compare prices, specifications, features and variants for two or more cars.
-            </p>
+      {/* COMPARE */}
+      <section className="pb-16 sm:pb-24" aria-labelledby="compare-title">
+        <div className={container}>
+          <div className="grid gap-10 overflow-hidden rounded-[32px] border border-white/10 bg-[#11161d] p-6 sm:p-10 lg:grid-cols-2 lg:items-center lg:p-14">
+            <div>
+              <h2 id="compare-title" className={`max-w-[16ch] ${h2Size} ${h2}`} style={wide}>
+                Compare cars side by side
+              </h2>
+              <p className="mt-5 max-w-[44ch] text-base leading-relaxed text-white/70 sm:text-lg">
+                Line up prices, specifications, features and variants for two or more cars.
+              </p>
+              <Link to={ROUTES.compare} className={`${btnPrimary} mt-8`}>
+                Compare cars
+                <ArrowUpRight className="h-5 w-5" aria-hidden="true" />
+              </Link>
+            </div>
+
+            <div aria-hidden="true" className="rounded-2xl border border-white/10 bg-[#0a0e13] p-5 sm:p-6">
+              <div className="mb-5 flex items-center justify-between text-sm font-semibold text-white/70">
+                <span className="flex items-center gap-2">
+                  <span className="h-2.5 w-2.5 rounded-full bg-[#ffb224]" />
+                  Car A
+                </span>
+                <span className="flex items-center gap-2">
+                  Car B
+                  <span className="h-2.5 w-2.5 rounded-full bg-white/50" />
+                </span>
+              </div>
+              <div className="space-y-5">
+                {compareRows.map(({ label, a, b }) => (
+                  <div key={label}>
+                    <p className="mb-2 text-center text-xs text-white/50">{label}</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="flex justify-end">
+                        <div className="h-2.5 rounded-full bg-[#ffb224]" style={{ width: `${a}%` }} />
+                      </div>
+                      <div className="flex justify-start">
+                        <div className="h-2.5 rounded-full bg-white/50" style={{ width: `${b}%` }} />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
-          <Link to={ROUTES.compare} className={`${btnLight} lg:mr-8`} style={{ ...slant, ...display }}>
-            Compare cars
-            <ArrowUpRight className="h-5 w-5" aria-hidden="true" />
-          </Link>
         </div>
       </section>
 
       {/* FINAL CTA */}
-      <section className="relative overflow-hidden py-20 text-center sm:py-32" aria-labelledby="final-title">
-        <div className={`${container} relative`}>
-          <h2 id="final-title" className="mx-auto max-w-[12ch] text-[clamp(3rem,8vw,7.5rem)] font-black italic leading-[0.9] tracking-[-0.015em]" style={display}>
-            Your next car starts here.
+      <section className="relative overflow-hidden border-t border-white/10 py-20 text-center sm:py-32" aria-labelledby="final-title">
+        <div className={container}>
+          <h2
+            id="final-title"
+            className="mx-auto max-w-[14ch] text-[clamp(2.25rem,6.5vw,5.5rem)] font-black leading-[1] tracking-[-0.03em]"
+            style={wide}
+          >
+            Your next car starts here
           </h2>
-          <Link to={ROUTES.vehicles} className={`${btnPrimary} mt-8`} style={{ ...slant, ...display }}>
+          <Link to={ROUTES.vehicles} className={`${btnPrimary} mt-10 h-14 px-9 text-base`}>
             Explore cars
             <ArrowUpRight className="h-5 w-5" aria-hidden="true" />
           </Link>

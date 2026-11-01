@@ -63,7 +63,8 @@ export default function HeroMedia({ children }) {
     if (!video || mediaState === 'failed') return;
 
     if (video.paused) {
-      video.play()
+      video
+        .play()
         .then(() => setMediaState('playing'))
         .catch(() => setMediaState('paused'));
       return;
@@ -73,11 +74,14 @@ export default function HeroMedia({ children }) {
     setMediaState('paused');
   };
 
+  const isPlaying = mediaState === 'playing';
+
   return (
-    <div className="cg-hero-media">
+    <div className="relative isolate overflow-hidden bg-[#0a0e13]">
+      {/* Media layer */}
       <video
         ref={videoRef}
-        className="cg-hero-media__video"
+        className="absolute inset-0 z-0 h-full w-full object-cover"
         autoPlay={videoEnabled}
         muted
         loop
@@ -89,20 +93,40 @@ export default function HeroMedia({ children }) {
       >
         <source src={HERO_VIDEO} type="video/mp4" />
       </video>
-      <div className="cg-hero-media__scrim" aria-hidden="true" />
-      <span className="cg-hero-media__lane cg-hero-media__lane--white" aria-hidden="true" />
-      <span className="cg-hero-media__lane cg-hero-media__lane--red" aria-hidden="true" />
-      <div className="cg-hero-media__content">{children}</div>
-      <p className="cg-sr-only">{HERO_POSTER_ALT}</p>
+
+      {/* Scrim: darkens the left for the headline and the bottom for the search panel */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 z-[1] bg-[linear-gradient(90deg,rgba(10,14,19,0.7)_0%,rgba(10,14,19,0.25)_55%,rgba(10,14,19,0.1)_100%)]"
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-1/2 bg-gradient-to-t from-[#0a0e13] to-transparent"
+      />
+
+      {/* Sodium-lamp hairline along the bottom edge */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 bottom-0 z-[2] h-[2px] bg-gradient-to-r from-[#ffb224] via-[#ffb224]/30 to-transparent"
+      />
+
+      <div className="relative z-10">{children}</div>
+
+      <p className="sr-only">{HERO_POSTER_ALT}</p>
+
       {videoEnabled && mediaState !== 'failed' && (
         <button
           type="button"
-          className="cg-hero-media__control"
           onClick={handleToggle}
-          aria-label={mediaState === 'playing' ? 'Pause hero video' : 'Play hero video'}
-          title={mediaState === 'playing' ? 'Pause hero video' : 'Play hero video'}
+          aria-label={isPlaying ? 'Pause hero video' : 'Play hero video'}
+          title={isPlaying ? 'Pause hero video' : 'Play hero video'}
+          className="absolute right-4 top-4 z-20 grid h-11 w-11 place-items-center rounded-full border border-white/25 bg-white/10 text-white backdrop-blur-xl transition-colors duration-200 hover:border-[#ffb224] hover:bg-[#ffb224] hover:text-[#0a0e13] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ffb224] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0e13] sm:right-6 sm:top-6"
         >
-          {mediaState === 'playing' ? <Pause aria-hidden="true" /> : <Play aria-hidden="true" />}
+          {isPlaying ? (
+            <Pause className="h-4 w-4" aria-hidden="true" />
+          ) : (
+            <Play className="h-4 w-4" aria-hidden="true" />
+          )}
         </button>
       )}
     </div>

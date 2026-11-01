@@ -5,11 +5,12 @@ import { toAppMediaUrl } from '../api/client';
 
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?w=900';
 
-/* --- Shared style tokens: replace with your existing ones if you have them --- */
-const display = { fontFamily: 'var(--font-display, inherit)' };
-const slant = { clipPath: 'polygon(0 0, 100% 0, calc(100% - 12px) 100%, 0 100%)' };
+/* Tokens: ink #0a0e13 · panel #11161d · sodium #ffb224 */
+const wide = { fontFamily: "'Archivo','Arial Black',system-ui,sans-serif", fontStretch: '125%' };
+const body = { fontFamily: "'Hanken Grotesk','Inter',system-ui,sans-serif" };
+
 const focusRing =
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f6c945] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d0e10]';
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ffb224] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0e13]';
 
 const handleImageError = (event) => {
   event.currentTarget.onerror = null;
@@ -41,48 +42,45 @@ export default function VehicleCard({ vehicle, variant = 'default' }) {
   const priceValue = isTba ? 'Price TBA' : hasRange ? `${startPrice} – ${topPrice}` : startPrice;
 
   return (
-    <article className="group relative flex h-full flex-col overflow-hidden border border-white/10 bg-[#1a1c20] text-white transition-all duration-300 hover:-translate-y-1.5 hover:border-[#dc2626] hover:shadow-[0_22px_40px_-18px_rgba(220,38,38,0.55)]">
+    <article
+      style={body}
+      className="group relative flex h-full flex-col overflow-hidden rounded-3xl border border-white/10 bg-[#11161d] text-white transition-colors duration-300 hover:border-[#ffb224]/70"
+    >
       {/* Whole-card link */}
       <Link
         to={`/vehicles/${vehicle.slug}`}
         state={detailNavigationState}
-        className={`absolute inset-0 z-0 ${focusRing}`}
+        className={`absolute inset-0 z-0 rounded-3xl ${focusRing}`}
         aria-label={`View ${vehicleName}`}
       />
 
       {/* ---------- Media ---------- */}
       <div
-        className={`pointer-events-none relative z-10 overflow-hidden bg-gradient-to-br from-[#24272d] via-[#1a1c20] to-[#0d0e10] ${compact ? 'aspect-[16/10]' : 'aspect-[4/3]'
-          }`}
+        className={`pointer-events-none relative z-10 overflow-hidden bg-[radial-gradient(ellipse_at_50%_100%,#2a3340,#0f141a_70%)] ${
+          compact ? 'aspect-[16/10]' : 'aspect-[4/3]'
+        }`}
       >
-        {/* Slanted red panels behind the car */}
+        {/* soft floor glow under the car */}
         <div
           aria-hidden="true"
-          className="absolute -right-10 top-0 h-full w-2/3 -skew-x-12 bg-gradient-to-l from-[#dc2626]/25 to-transparent transition-transform duration-500 group-hover:translate-x-3"
+          className="absolute inset-x-8 bottom-3 h-6 rounded-[50%] bg-black/50 blur-xl"
         />
-        <div aria-hidden="true" className="absolute right-6 top-0 h-full w-[3px] -skew-x-12 bg-[#dc2626]/60" />
 
         <img
           src={imageUrl}
           alt={vehicleName}
           loading="lazy"
           onError={handleImageError}
-          className="relative h-full w-full object-contain p-4 drop-shadow-[0_18px_18px_rgba(0,0,0,0.55)] transition-transform duration-500 ease-out group-hover:translate-x-1.5 group-hover:scale-[1.05]"
+          className="relative h-full w-full object-contain p-4 drop-shadow-[0_18px_18px_rgba(0,0,0,0.5)] motion-safe:transition-transform motion-safe:duration-500 motion-safe:ease-out motion-safe:group-hover:scale-[1.05]"
         />
 
         {/* Tags */}
-        <div className="absolute left-0 top-3 flex flex-wrap items-center gap-2">
-          <span
-            className="bg-[#dc2626] py-1 pl-3 pr-5 text-[10px] font-extrabold uppercase italic tracking-wider text-white"
-            style={{ ...slant, ...display }}
-          >
+        <div className="absolute left-4 top-4 flex flex-wrap items-center gap-2">
+          <span className="rounded-full border border-white/20 bg-black/30 px-3 py-1 text-xs font-semibold text-white backdrop-blur-xl">
             {vehicle.brand_name || 'Brand TBA'}
           </span>
           {isEv && (
-            <span
-              className="inline-flex items-center gap-1 bg-emerald-500 py-1 pl-2.5 pr-4 text-[10px] font-extrabold uppercase italic tracking-wider text-[#0d0e10]"
-              style={{ ...slant, ...display }}
-            >
+            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-400 px-2.5 py-1 text-xs font-bold text-[#0a0e13]">
               <Zap className="h-3 w-3" aria-hidden="true" />
               EV
             </span>
@@ -91,40 +89,38 @@ export default function VehicleCard({ vehicle, variant = 'default' }) {
       </div>
 
       {/* ---------- Content ---------- */}
-      <div className="pointer-events-none relative z-10 flex flex-1 flex-col p-4 sm:p-5">
+      <div className="pointer-events-none relative z-10 flex flex-1 flex-col p-5">
         <div className="flex-1">
           <h3
-            className={`line-clamp-1 font-extrabold italic leading-none tracking-tight text-white transition-colors duration-300 group-hover:text-[#f6c945] ${compact ? 'text-2xl' : 'text-2xl sm:text-3xl'
-              }`}
-            style={display}
+            className={`line-clamp-1 font-extrabold leading-tight tracking-[-0.02em] text-white ${
+              compact ? 'text-xl' : 'text-xl sm:text-2xl'
+            }`}
+            style={wide}
           >
             {compact ? vehicle.name || 'Unnamed vehicle' : vehicleName}
           </h3>
-          <p className="mt-1.5 text-xs font-bold uppercase tracking-widest text-white/50">
-            {vehicle.body_type || 'Body type TBA'}
-          </p>
+          <p className="mt-1.5 text-sm text-white/55">{vehicle.body_type || 'Body type TBA'}</p>
 
-          <div className="mt-4 grid grid-cols-2 gap-2 text-xs font-bold text-white/80">
-            <span className="inline-flex min-h-9 items-center gap-1.5 border border-white/10 bg-white/5 px-2.5 transition-colors group-hover:border-[#dc2626]/50">
-              <Fuel className="h-3.5 w-3.5 flex-none text-[#dc2626]" aria-hidden="true" />
-              <span className="truncate capitalize">{vehicle.fuel_type || 'Fuel TBA'}</span>
+          <div className="mt-4 flex flex-wrap gap-2 text-sm text-white/80">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 px-3 py-1">
+              <Fuel className="h-3.5 w-3.5 flex-none text-[#ffb224]" aria-hidden="true" />
+              <span className="capitalize">{vehicle.fuel_type || 'Fuel TBA'}</span>
             </span>
-            <span className="inline-flex min-h-9 items-center gap-1.5 border border-white/10 bg-white/5 px-2.5 transition-colors group-hover:border-[#dc2626]/50">
-              <Gauge className="h-3.5 w-3.5 flex-none text-[#dc2626]" aria-hidden="true" />
-              <span className="truncate">
-                {vehicle.seats ? `${vehicle.seats} Seats` : vehicle.transmission || 'Specs TBA'}
-              </span>
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 px-3 py-1">
+              <Gauge className="h-3.5 w-3.5 flex-none text-[#ffb224]" aria-hidden="true" />
+              <span>{vehicle.seats ? `${vehicle.seats} seats` : vehicle.transmission || 'Specs TBA'}</span>
             </span>
           </div>
         </div>
 
         {/* Price + actions */}
-        <div className="mt-4 border-t border-white/10 pt-4">
-          <span className="text-[10px] font-extrabold uppercase tracking-widest text-white/50">{priceLabel}</span>
+        <div className="mt-5 border-t border-white/10 pt-4">
+          <span className="text-xs text-white/55">{priceLabel}</span>
           <div
-            className={`mt-1 min-h-7 font-extrabold italic tabular-nums ${isTba ? 'text-white/50' : 'text-[#f6c945]'
-              } ${compact ? 'text-lg' : 'text-xl'}`}
-            style={display}
+            className={`mt-1 min-h-7 font-bold tabular-nums leading-tight ${
+              isTba ? 'text-white/50' : 'text-white'
+            } ${compact ? 'text-lg' : 'text-xl'}`}
+            style={wide}
           >
             {priceValue}
           </div>
@@ -132,33 +128,22 @@ export default function VehicleCard({ vehicle, variant = 'default' }) {
           <div className="pointer-events-auto relative z-10 mt-4 grid grid-cols-[1fr_auto] gap-2">
             <Link
               to={`/calculator?vehicle=${vehicle.id}`}
-              className={`group/btn relative inline-flex h-11 items-center justify-center gap-2 overflow-hidden bg-[#dc2626] pl-3 pr-5 text-sm font-extrabold italic uppercase tracking-wide text-white transition-all duration-300 hover:bg-[#f6c945] hover:text-[#0d0e10] active:scale-[0.97] ${focusRing}`}
-              style={{ ...slant, ...display }}
+              className={`inline-flex h-11 items-center justify-center gap-2 rounded-full bg-[#ffb224] px-5 text-sm font-bold text-[#0a0e13] transition-colors duration-200 hover:bg-white active:scale-[0.98] ${focusRing}`}
             >
-              <span
-                aria-hidden="true"
-                className="absolute inset-y-0 -left-1/2 w-1/3 -skew-x-[22deg] bg-white/30 transition-all duration-700 group-hover/btn:left-[130%]"
-              />
-              <Calculator className="relative h-4 w-4" aria-hidden="true" />
-              <span className="relative">Price breakup</span>
+              <Calculator className="h-4 w-4" aria-hidden="true" />
+              Price breakup
             </Link>
             <Link
               to={`/vehicles/${vehicle.slug}`}
               state={detailNavigationState}
-              className={`group/view inline-flex h-11 w-11 items-center justify-center border border-white/20 bg-transparent text-white transition-all duration-300 hover:border-[#f6c945] hover:bg-[#f6c945] hover:text-[#0d0e10] ${focusRing}`}
+              className={`inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/20 text-white transition-colors duration-200 hover:border-[#ffb224] hover:bg-[#ffb224] hover:text-[#0a0e13] ${focusRing}`}
               aria-label={`View ${vehicleName}`}
             >
-              <ArrowUpRight className="h-5 w-5 transition-transform duration-300 group-hover/view:-translate-y-0.5 group-hover/view:translate-x-0.5" />
+              <ArrowUpRight className="h-5 w-5" aria-hidden="true" />
             </Link>
           </div>
         </div>
       </div>
-
-      {/* Red underline that slides in on hover */}
-      <span
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-[3px] origin-left scale-x-0 bg-[#dc2626] transition-transform duration-500 group-hover:scale-x-100"
-      />
     </article>
   );
 }
