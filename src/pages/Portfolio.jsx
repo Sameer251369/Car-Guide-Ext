@@ -47,7 +47,9 @@ export default function Portfolio() {
   const savedState = listingStates.get(location.key);
   const [searchQuery, setSearchQuery] = useState(savedState?.searchQuery ?? searchParams.get('search') ?? '');
   const [selectedBrand, setSelectedBrand] = useState(savedState?.selectedBrand ?? '');
-  const [selectedBodyType, setSelectedBodyType] = useState(savedState?.selectedBodyType ?? '');
+  const [selectedBodyType, setSelectedBodyType] = useState(savedState?.selectedBodyType ?? searchParams.get('body_type') ?? '');
+  const [minPrice, setMinPrice] = useState(searchParams.get('min_price') ?? '');
+  const [maxPrice, setMaxPrice] = useState(searchParams.get('max_price') ?? '');
   const [selectedFuelType, setSelectedFuelType] = useState(savedState?.selectedFuelType ?? '');
   const [ordering, setOrdering] = useState(savedState?.ordering ?? 'name');
   const [currentPage, setCurrentPage] = useState(savedState?.currentPage ?? 1);
@@ -59,6 +61,9 @@ export default function Portfolio() {
     if (nextSearch !== previousSearch.current) {
       previousSearch.current = nextSearch;
       setSearchQuery(searchParams.get('search') || '');
+      setSelectedBodyType(searchParams.get('body_type') || '');
+      setMinPrice(searchParams.get('min_price') || '');
+      setMaxPrice(searchParams.get('max_price') || '');
       setCurrentPage(1);
     }
   }, [searchParams]);
@@ -86,6 +91,8 @@ export default function Portfolio() {
     ...(searchQuery && { search: searchQuery }),
     ...(selectedBrand && { brand__slug: selectedBrand }),
     ...(selectedBodyType && { body_type: selectedBodyType }),
+    ...(minPrice && { min_price: minPrice }),
+    ...(maxPrice && { max_price: maxPrice }),
     ...(selectedFuelType && { fuel_type: selectedFuelType }),
     ...(ordering && { ordering }),
   };

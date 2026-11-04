@@ -7,6 +7,19 @@ const slant = { clipPath: 'polygon(0 0, 100% 0, calc(100% - 12px) 100%, 0 100%)'
 const focusRing =
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f6c945] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d0e10]';
 
+/* Glass surface shared by cards, table and notices */
+const glass =
+  'border border-white/10 bg-gradient-to-b from-white/[0.07] to-white/[0.02] backdrop-blur-xl';
+
+/* Faint grid + red glow used behind each state of the component */
+const gridMask = {
+  backgroundImage:
+    'linear-gradient(to right, #fff 1px, transparent 1px), linear-gradient(to bottom, #fff 1px, transparent 1px)',
+  backgroundSize: '44px 44px',
+  maskImage: 'radial-gradient(ellipse at 80% 0%, black 10%, transparent 65%)',
+  WebkitMaskImage: 'radial-gradient(ellipse at 80% 0%, black 10%, transparent 65%)',
+};
+
 const BADGES = {
   gov: { label: 'Official Government', cls: 'bg-emerald-500/15 text-emerald-300 border-emerald-400/40' },
   statutory: { label: 'Official Statutory', cls: 'bg-sky-500/15 text-sky-300 border-sky-400/40' },
@@ -19,7 +32,7 @@ const renderBadge = (type) => {
   const badge = BADGES[type] || BADGES.optional;
   return (
     <span
-      className={`inline-block border py-1 pl-2.5 pr-4 text-[10px] font-extrabold uppercase italic tracking-wider ${badge.cls}`}
+      className={`inline-block border py-1 pl-2.5 pr-4 text-[10px] font-extrabold uppercase italic tracking-wider backdrop-blur ${badge.cls}`}
       style={slant}
     >
       {badge.label}
@@ -28,27 +41,33 @@ const renderBadge = (type) => {
 };
 
 const TONES = {
-  default: { row: 'hover:bg-white/[0.03]', title: 'text-white', detail: 'text-white/50', amount: 'text-white' },
-  strong: { row: 'hover:bg-white/[0.03]', title: 'text-white font-bold', detail: 'text-white/50', amount: 'text-white font-bold' },
-  indigo: { row: 'bg-indigo-500/10', title: 'text-indigo-200', detail: 'text-indigo-200/70', amount: 'text-indigo-100' },
-  amber: { row: 'bg-[#f6c945]/10', title: 'text-[#f6c945]', detail: 'text-[#f6c945]/70', amount: 'text-[#f6c945] font-semibold' },
+  default: { row: 'hover:bg-white/[0.04]', title: 'text-white', detail: 'text-white/50', amount: 'text-white', bar: 'bg-transparent' },
+  strong: { row: 'bg-white/[0.04] hover:bg-white/[0.07]', title: 'text-white font-bold', detail: 'text-white/55', amount: 'text-white font-bold', bar: 'bg-white/60' },
+  indigo: { row: 'bg-indigo-500/10 hover:bg-indigo-500/15', title: 'text-indigo-200', detail: 'text-indigo-200/70', amount: 'text-indigo-100', bar: 'bg-indigo-400' },
+  amber: { row: 'bg-[#f6c945]/10 hover:bg-[#f6c945]/15', title: 'text-[#f6c945]', detail: 'text-[#f6c945]/70', amount: 'text-[#f6c945] font-semibold', bar: 'bg-[#f6c945]' },
 };
 
 function Row({ title, detail, amount, badge, tone = 'default' }) {
   const t = TONES[tone];
   return (
-    <tr className={`transition-colors ${t.row}`}>
-      <td className={`px-4 py-3.5 font-medium ${t.title}`}>{title}</td>
-      <td className={`px-4 py-3.5 text-xs ${t.detail}`}>{detail}</td>
-      <td className={`px-4 py-3.5 text-right font-mono tabular-nums ${t.amount}`}>{amount}</td>
-      <td className="px-4 py-3.5 text-center">{renderBadge(badge)}</td>
+    <tr className={`group transition-colors ${t.row}`}>
+      <td className={`relative px-4 py-4 font-medium ${t.title}`}>
+        <span
+          aria-hidden="true"
+          className={`absolute inset-y-3 left-0 w-[3px] -skew-x-12 rounded-full ${t.bar} transition-colors ${tone === 'default' ? 'group-hover:bg-[#dc2626]' : ''}`}
+        />
+        {title}
+      </td>
+      <td className={`px-4 py-4 text-xs leading-relaxed ${t.detail}`}>{detail}</td>
+      <td className={`px-4 py-4 text-right font-mono tabular-nums ${t.amount}`}>{amount}</td>
+      <td className="px-4 py-4 text-center">{renderBadge(badge)}</td>
     </tr>
   );
 }
 
 function Disclaimer({ text, label }) {
   return (
-    <div className="space-y-1.5 border border-white/10 bg-[#0d0e10] p-4 text-[11px]">
+    <div className={`space-y-1.5 p-4 text-[11px] ${glass} bg-[#0d0e10]/70`}>
       <p className="flex items-center gap-1.5 font-extrabold uppercase italic tracking-wider text-white/80" style={display}>
         <Info className="h-3.5 w-3.5 shrink-0 text-[#dc2626]" aria-hidden="true" />
         <span>{label}</span>
@@ -77,19 +96,23 @@ export default function PriceBreakdownTable({ breakdown, vehicleName, variantNam
   // Data Not Available for State / Fuel combination
   if (breakdown.data_available === false) {
     return (
-      <div className="relative space-y-4 overflow-hidden border border-[#dc2626]/50 bg-[#1a1c20] p-6 md:p-8">
-        <div aria-hidden="true" className="pointer-events-none absolute -right-10 top-0 h-full w-1/2 -skew-x-12 bg-gradient-to-l from-[#dc2626]/20 to-transparent" />
-        <div className="relative flex items-center gap-3">
-          <AlertTriangle className="h-8 w-8 shrink-0 text-[#dc2626]" aria-hidden="true" />
+      <div className="relative space-y-5 overflow-hidden border border-[#dc2626]/50 bg-[#121316] p-6 shadow-[0_30px_70px_-40px_rgba(220,38,38,0.7)] md:p-8">
+        <div aria-hidden="true" className="pointer-events-none absolute -right-10 top-0 h-full w-1/2 -skew-x-12 bg-gradient-to-l from-[#dc2626]/25 to-transparent" />
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0 opacity-[0.05]" style={gridMask} />
+        <div className="relative flex items-center gap-4">
+          <span className="relative flex h-14 w-14 shrink-0 items-center justify-center" aria-hidden="true">
+            <span className="absolute inset-0 -skew-x-12 bg-[#dc2626]/20 shadow-[0_0_30px_rgba(220,38,38,0.5)]" />
+            <AlertTriangle className="relative h-7 w-7 text-[#ef4444]" />
+          </span>
           <div>
-            <h2 className="text-2xl font-extrabold italic leading-none text-white" style={display}>{vehicleName}</h2>
-            <p className="mt-1.5 text-xs font-bold uppercase tracking-widest text-[#dc2626]">
+            <h2 className="text-2xl font-extrabold italic leading-none tracking-tight text-white" style={display}>{vehicleName}</h2>
+            <p className="mt-1.5 text-xs font-bold uppercase tracking-widest text-[#ef4444]">
               Tax Rule Data Gap • {breakdown.state_name} ({breakdown.state_code})
             </p>
           </div>
         </div>
 
-        <div className="relative space-y-2 border border-white/10 bg-[#0d0e10] p-4 text-xs text-white/70">
+        <div className={`relative space-y-2 p-5 text-xs text-white/70 ${glass} bg-[#0d0e10]/70`}>
           <h3 className="text-sm font-extrabold uppercase italic tracking-wide text-[#f6c945]" style={display}>Verified RTO Data Gap</h3>
           <p className="leading-relaxed">
             {breakdown.message || `State tax rules for ${breakdown.state_name} have not been verified in our rule engine. We surface this data gap explicitly rather than silently estimating a flat tax percentage.`}
@@ -102,19 +125,23 @@ export default function PriceBreakdownTable({ breakdown, vehicleName, variantNam
   // If vehicle is TBA
   if (breakdown.is_tba) {
     return (
-      <div className="relative space-y-6 overflow-hidden border border-[#f6c945]/40 bg-[#1a1c20] p-6 md:p-8">
-        <div aria-hidden="true" className="pointer-events-none absolute -right-10 top-0 h-full w-1/2 -skew-x-12 bg-gradient-to-l from-[#f6c945]/10 to-transparent" />
-        <div className="relative flex items-center gap-3">
-          <AlertCircle className="h-9 w-9 shrink-0 text-[#f6c945]" aria-hidden="true" />
+      <div className="relative space-y-6 overflow-hidden border border-[#f6c945]/40 bg-[#121316] p-6 shadow-[0_30px_70px_-40px_rgba(246,201,69,0.45)] md:p-8">
+        <div aria-hidden="true" className="pointer-events-none absolute -right-10 top-0 h-full w-1/2 -skew-x-12 bg-gradient-to-l from-[#f6c945]/15 to-transparent" />
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0 opacity-[0.05]" style={gridMask} />
+        <div className="relative flex items-center gap-4">
+          <span className="relative flex h-14 w-14 shrink-0 items-center justify-center" aria-hidden="true">
+            <span className="absolute inset-0 -skew-x-12 bg-[#f6c945]/15 shadow-[0_0_30px_rgba(246,201,69,0.4)]" />
+            <AlertCircle className="relative h-8 w-8 text-[#f6c945]" />
+          </span>
           <div>
-            <h2 className="text-3xl font-extrabold italic leading-none text-white" style={display}>{vehicleName}</h2>
+            <h2 className="text-3xl font-extrabold italic leading-none tracking-tight text-white" style={display}>{vehicleName}</h2>
             <p className="mt-1.5 text-xs font-bold uppercase tracking-widest text-[#f6c945]">
               Price to be announced • {breakdown.state_name || 'All States'}
             </p>
           </div>
         </div>
 
-        <div className="relative space-y-2 border border-[#f6c945]/30 bg-[#f6c945]/10 p-6 text-sm text-white/80">
+        <div className="relative space-y-2 border border-[#f6c945]/30 bg-gradient-to-br from-[#f6c945]/15 to-[#f6c945]/5 p-6 text-sm text-white/80 backdrop-blur-xl">
           <h3 className="text-lg font-extrabold uppercase italic tracking-wide text-[#f6c945]" style={display}>
             Unlaunched / Pricing TBA Vehicle
           </h3>
@@ -142,25 +169,31 @@ export default function PriceBreakdownTable({ breakdown, vehicleName, variantNam
     String(breakdown.effective_fuel_type).toLowerCase().includes('electric');
 
   return (
-    <div className="relative space-y-8 overflow-hidden border border-white/10 bg-[#1a1c20] p-6 text-white md:p-8">
-      {/* Decorative speed panels */}
-      <div aria-hidden="true" className="pointer-events-none absolute -right-16 -top-10 h-72 w-72 -skew-x-12 bg-gradient-to-br from-[#dc2626]/15 to-transparent" />
+    <div className="relative space-y-8 overflow-hidden border border-white/10 bg-[#121316] p-6 text-white shadow-[0_40px_90px_-50px_rgba(0,0,0,0.9)] md:p-8">
+      {/* Decorative backdrop: speed panels, glow and masked grid */}
+      <div aria-hidden="true" className="pointer-events-none absolute -right-16 -top-10 h-72 w-72 -skew-x-12 bg-gradient-to-br from-[#dc2626]/20 to-transparent" />
+      <div aria-hidden="true" className="pointer-events-none absolute -right-32 -top-32 h-96 w-96 rounded-full bg-[#dc2626]/15 blur-[120px]" />
+      <div aria-hidden="true" className="pointer-events-none absolute -bottom-40 -left-24 h-80 w-80 rounded-full bg-[#f6c945]/[0.07] blur-[120px]" />
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 opacity-[0.05]" style={gridMask} />
 
       {/* ---------- Header ---------- */}
-      <div className="relative flex flex-col justify-between gap-4 border-b border-white/10 pb-6 md:flex-row md:items-center">
+      <div className="relative flex flex-col justify-between gap-5 border-b border-white/10 pb-7 md:flex-row md:items-center">
         <div>
-          <div className="mb-2 flex flex-wrap items-center gap-2 text-xs font-extrabold uppercase tracking-widest text-[#f6c945]">
-            <span aria-hidden="true" className="h-[3px] w-7 -skew-x-[30deg] bg-[#dc2626]" />
+          <div className="mb-3 flex flex-wrap items-center gap-2 text-xs font-extrabold uppercase tracking-widest text-[#f6c945]">
+            <span aria-hidden="true" className="h-[3px] w-7 -skew-x-[30deg] bg-[#dc2626] shadow-[0_0_12px_rgba(220,38,38,0.9)]" />
             <CheckCircle2 className="h-4 w-4 text-emerald-400" aria-hidden="true" />
             <span>Rule-Engine State-Wise On-Road Price Unlocked</span>
             {leadId && (
-              <span className="border border-white/20 bg-white/5 px-2 py-0.5 text-[10px] text-white/70">Ref #{leadId}</span>
+              <span className="border border-white/20 bg-white/5 px-2 py-0.5 text-[10px] text-white/70 backdrop-blur">Ref #{leadId}</span>
             )}
           </div>
-          <h2 className="text-3xl font-extrabold italic leading-none tracking-tight text-white sm:text-4xl" style={display}>
+          <h2
+            className="bg-gradient-to-b from-white to-white/70 bg-clip-text text-4xl font-extrabold italic leading-none tracking-[-0.03em] text-transparent sm:text-5xl"
+            style={display}
+          >
             {vehicleName}
           </h2>
-          <p className="mt-2 text-xs font-medium text-white/50">
+          <p className="mt-3 text-xs font-medium text-white/50">
             {variantName} • {breakdown.state_name} ({breakdown.state_code}) • Powertrain:{' '}
             <strong className="uppercase text-white">{breakdown.effective_fuel_type}</strong> • Ownership:{' '}
             <strong className="uppercase text-white">{breakdown.ownership_type || 'individual'}</strong>
@@ -180,24 +213,24 @@ export default function PriceBreakdownTable({ breakdown, vehicleName, variantNam
       </div>
 
       {breakdown.note && (
-        <div className="relative flex items-center gap-2 border border-[#f6c945]/40 bg-[#f6c945]/10 p-3.5 text-xs text-[#f6c945]">
+        <div className="relative flex items-center gap-2 border border-[#f6c945]/40 bg-gradient-to-r from-[#f6c945]/15 to-[#f6c945]/5 p-3.5 text-xs text-[#f6c945] backdrop-blur-xl">
           <Info className="h-4 w-4 shrink-0" aria-hidden="true" />
           <span>Note: {breakdown.note}</span>
         </div>
       )}
 
       {/* ---------- Auditable 4-column table ---------- */}
-      <div className="relative overflow-x-auto border border-white/10 bg-[#0d0e10]">
+      <div className={`relative overflow-x-auto bg-[#0d0e10]/70 ${glass}`}>
         <table className="w-full text-left text-sm">
-          <thead className="border-b border-[#dc2626]/60 bg-[#24272d] text-xs font-extrabold uppercase tracking-widest text-white/60">
+          <thead className="border-b border-[#dc2626]/60 bg-black/40 text-xs font-extrabold uppercase tracking-widest text-white/60">
             <tr>
-              <th className="px-4 py-3.5">Component</th>
-              <th className="px-4 py-3.5">Methodology &amp; Details</th>
-              <th className="px-4 py-3.5 text-right">Amount (INR)</th>
-              <th className="px-4 py-3.5 text-center">Charge Type</th>
+              <th className="px-4 py-4">Component</th>
+              <th className="px-4 py-4">Methodology &amp; Details</th>
+              <th className="px-4 py-4 text-right">Amount (INR)</th>
+              <th className="px-4 py-4 text-center">Charge Type</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-white/10 text-white/80">
+          <tbody className="divide-y divide-white/[0.08] text-white/80">
             <Row
               tone="strong"
               title="1. Ex-Showroom Price"
@@ -320,34 +353,38 @@ export default function PriceBreakdownTable({ breakdown, vehicleName, variantNam
 
       {/* ---------- Subtotals ---------- */}
       <div className="relative grid grid-cols-1 gap-4 pt-2 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="border border-white/10 bg-[#0d0e10] p-4 transition-colors hover:border-[#dc2626]/60">
+        <div className={`p-4 transition-colors hover:border-[#dc2626]/60 ${glass}`}>
           <span className="block text-[10px] font-extrabold uppercase tracking-widest text-white/50">Total Government &amp; RTO Charges</span>
-          <span className="mt-1 block font-mono text-lg font-extrabold tabular-nums text-white">
+          <span className="mt-1.5 block font-mono text-xl font-extrabold tabular-nums text-white">
             {formatRupees(breakdown.total_government_charges)}
           </span>
           <span className="mt-0.5 block text-[10px] text-white/40">Road Tax + Reg + Cesses + TCS</span>
         </div>
 
-        <div className="border border-violet-400/30 bg-violet-500/10 p-4 transition-colors hover:border-violet-300/70">
+        <div className="border border-violet-400/30 bg-gradient-to-b from-violet-500/20 to-violet-500/5 p-4 backdrop-blur-xl transition-colors hover:border-violet-300/70">
           <span className="block text-[10px] font-extrabold uppercase tracking-widest text-violet-300">Total Insurance (1+3 Yr)</span>
-          <span className="mt-1 block font-mono text-lg font-extrabold tabular-nums text-violet-100">
+          <span className="mt-1.5 block font-mono text-xl font-extrabold tabular-nums text-violet-100">
             {formatRupees(breakdown.total_insurance)}
           </span>
           <span className="mt-0.5 block text-[10px] text-violet-300/70">IRDAI Statutory 1-Yr OD + 3-Yr TP</span>
         </div>
 
-        <div className="border border-white/10 bg-[#0d0e10] p-4 transition-colors hover:border-[#dc2626]/60">
+        <div className={`p-4 transition-colors hover:border-[#dc2626]/60 ${glass}`}>
           <span className="block text-[10px] font-extrabold uppercase tracking-widest text-white/50">Optional &amp; FASTag Charges</span>
-          <span className="mt-1 block font-mono text-lg font-extrabold tabular-nums text-white">
+          <span className="mt-1.5 block font-mono text-xl font-extrabold tabular-nums text-white">
             {formatRupees(breakdown.optional_charges)}
           </span>
           <span className="mt-0.5 block text-[10px] text-white/40">FASTag + Handling &amp; Preparation</span>
         </div>
 
-        <div className="relative overflow-hidden bg-[#dc2626] py-4 pl-4 pr-8 text-white shadow-[0_18px_30px_-16px_rgba(220,38,38,0.8)]" style={slant}>
+        <div
+          className="relative overflow-hidden bg-gradient-to-br from-[#ef4444] to-[#b91c1c] py-4 pl-4 pr-8 text-white shadow-[0_24px_40px_-16px_rgba(220,38,38,0.9)]"
+          style={slant}
+        >
           <div aria-hidden="true" className="absolute -right-6 top-0 h-full w-1/2 -skew-x-12 bg-white/10" />
+          <div aria-hidden="true" className="absolute -left-8 -top-8 h-24 w-24 rounded-full bg-white/20 blur-2xl" />
           <span className="relative block text-[10px] font-extrabold uppercase tracking-widest text-white/80">Final On-Road Price</span>
-          <span className="relative mt-1 block font-mono text-2xl font-extrabold italic tabular-nums text-white" style={display}>
+          <span className="relative mt-1 block font-mono text-3xl font-extrabold italic tabular-nums text-white" style={display}>
             {formatRupees(breakdown.final_on_road_price || breakdown.total_on_road_price)}
           </span>
           <span className="relative mt-0.5 block text-[10px] font-medium text-white/80">All Charges Included</span>
@@ -356,7 +393,7 @@ export default function PriceBreakdownTable({ breakdown, vehicleName, variantNam
 
       {/* ---------- Rule engine verification ---------- */}
       {meta.notificationNumber && (
-        <div className="relative space-y-2 border border-[#f6c945]/30 bg-[#0d0e10] p-4 text-xs text-white/70">
+        <div className="relative space-y-2 border border-[#f6c945]/30 bg-gradient-to-b from-[#f6c945]/[0.07] to-[#0d0e10]/70 p-4 text-xs text-white/70 backdrop-blur-xl">
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-2">
             <span className="flex items-center gap-1.5 text-sm font-extrabold uppercase italic tracking-wide text-[#f6c945]" style={display}>
               <FileText className="h-4 w-4" aria-hidden="true" />

@@ -1,13 +1,35 @@
 import React from 'react';
-import { Mail, Phone, ArrowUpRight, Globe, Camera, Mic, Radio } from 'lucide-react';
+import { Mail, Phone, ArrowUpRight, Globe, Camera, Mic, Radio, Check } from 'lucide-react';
 import SEOHead from '../components/SEOHead';
 
+/*
+  About, in the same look as the on-road price calculator
+  - Deep navy surfaces (#080b11 page, #0d1119 panels, #090c12 inner cards) with hairline white borders
+  - One accent: amber #ffb020, used for the primary action, key numbers and icon chips
+  - Soft grey-blue #dfe3e8 panels (like "Selected variant") carry the quote and the contact block
+  - Emerald chips for small facts, same as "36 states / UT slabs"
+  - Pill buttons, large rounded cards, one wide heavy display face for headings
+  Layout rules so it holds on phones and laptops
+  - One container (max-w-6xl) and one gutter everywhere
+  - Every grid collapses to one column below md/lg; nothing is skewed, clipped or marquee-scrolled
+  - Headings use clamp() sizes and break-words, so long words never push the page sideways
+*/
+
 const FONT_CSS = `
-@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@1,800;1,900&family=Barlow:wght@400;500;600&display=swap');
-.cg-display{font-family:'Barlow Condensed',Impact,sans-serif;font-style:italic;font-weight:900;text-transform:uppercase;letter-spacing:-0.01em;line-height:.88}
-.cg-body{font-family:'Barlow',system-ui,sans-serif}
-.cg-glass{background:rgba(255,255,255,.05);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.12)}
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+.cg-display{font-family:'Syne','Plus Jakarta Sans',system-ui,sans-serif;font-weight:800;letter-spacing:-0.03em;line-height:1.05}
+.cg-body{font-family:'Plus Jakarta Sans',system-ui,sans-serif}
 `;
+
+const wrap = 'mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8';
+const section = 'py-14 sm:py-20';
+const h2Cls = 'cg-display break-words text-[clamp(1.75rem,5vw,3rem)]';
+const card = 'rounded-3xl border border-white/10 bg-[#0d1119]';
+const inner = 'rounded-2xl border border-white/10 bg-[#090c12]';
+const focus =
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ffb020] focus-visible:ring-offset-2 focus-visible:ring-offset-[#080b11]';
+const focusLight =
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2 focus-visible:ring-offset-[#dfe3e8]';
 
 const stats = [
   ['650M+', 'total video views'],
@@ -38,7 +60,7 @@ const hits = [
 const ages = [
   ['18–24', 37.3], ['25–34', 39.2], ['35–44', 16.7], ['45–54', 4.7], ['55+', 2.1],
 ];
-const ageShade = ['bg-red-600', 'bg-red-500', 'bg-red-400/80', 'bg-white/40', 'bg-white/25'];
+const ageShade = ['bg-[#ffb020]', 'bg-[#ffb020]/70', 'bg-[#ffb020]/45', 'bg-white/35', 'bg-white/20'];
 
 const services = [
   ['Drive reviews', 'Scripted, professionally shot video and written reviews, published across every platform.'],
@@ -69,6 +91,13 @@ const team = [
   ['Harshit Jangra', 'Video editor', 'Social reels, short-form vlogs and motion graphics.'],
 ];
 
+const initials = (name) =>
+  name
+    .split(' ')
+    .map((p) => p[0])
+    .join('')
+    .slice(0, 2);
+
 export default function About() {
   return (
     <>
@@ -78,45 +107,52 @@ export default function About() {
       />
       <style>{FONT_CSS}</style>
 
-      <div className="cg-body bg-black text-white min-h-screen selection:bg-red-600">
-        {/* HERO */}
-        <section className="relative overflow-hidden border-b border-white/10">
-          <div className="pointer-events-none absolute -top-40 -right-40 h-[32rem] w-[32rem] rounded-full bg-red-600/40 blur-[140px]" />
-          <div className="relative mx-auto max-w-7xl px-5 sm:px-8 pt-20 pb-14 md:pt-32">
-            <p className="text-sm text-white/60 mb-6">India’s leading voice in automotive media</p>
-            <h1 className="cg-display text-[22vw] sm:text-[17vw] lg:text-[13rem]">
+      <div className="cg-body min-h-screen overflow-x-clip bg-[#080b11] text-white selection:bg-[#ffb020] selection:text-black">
+        {/* ================= HERO ================= */}
+        <section className="relative overflow-hidden">
+          <div aria-hidden="true" className="pointer-events-none absolute inset-0">
+            <div className="absolute -right-32 -top-40 h-[28rem] w-[28rem] rounded-full bg-[#ffb020]/15 blur-[130px]" />
+            <div className="absolute -left-40 top-1/2 h-[24rem] w-[24rem] rounded-full bg-sky-500/10 blur-[140px]" />
+          </div>
+
+          <div className={`${wrap} relative pb-10 pt-24 sm:pb-14 sm:pt-32`}>
+            <p className="inline-flex max-w-full items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-2 text-sm font-medium text-white/80">
+              <span className="h-2 w-2 shrink-0 rounded-full bg-[#ffb020]" aria-hidden="true" />
+              <span className="truncate">India’s leading voice in automotive media</span>
+            </p>
+
+            <h1 className="cg-display mt-6 break-words text-[clamp(2.75rem,10vw,6.5rem)] leading-[0.98]">
               Car Guide
-              <span className="block text-red-600">Media</span>
+              <span className="block text-[#ffb020]">Media</span>
             </h1>
-            <div className="mt-10 flex flex-col md:flex-row md:items-end md:justify-between gap-8">
-              <p className="max-w-xl text-lg text-white/70 leading-relaxed">
+
+            <div className="mt-8 flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
+              <p className="max-w-xl text-base leading-relaxed text-white/70 sm:text-lg">
                 Honest car, bike and scooter reviews, state-wise tax calculators and international motor show coverage, in English and Hindi.
               </p>
-              <div className="flex flex-wrap gap-3">
+              <div className="flex flex-col gap-3 sm:flex-row">
                 <a
                   href="https://www.youtube.com/@CarGuideMedia"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 bg-red-600 px-6 py-3.5 font-semibold hover:bg-red-500 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                  className={`inline-flex items-center justify-center gap-2 rounded-full bg-[#ffb020] px-7 py-3.5 font-bold text-black transition-colors hover:bg-[#ffc24d] ${focus}`}
                 >
-                  Subscribe on YouTube <ArrowUpRight className="h-4 w-4" />
+                  Subscribe on YouTube <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
                 </a>
                 <a
                   href="#contact"
-                  className="inline-flex items-center gap-2 border border-white/30 px-6 py-3.5 font-semibold hover:bg-white hover:text-black transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                  className={`inline-flex items-center justify-center rounded-full border border-white/20 bg-white/5 px-7 py-3.5 font-semibold transition-colors hover:bg-white/10 ${focus}`}
                 >
                   Partner with us
                 </a>
               </div>
             </div>
-          </div>
 
-          {/* STATS */}
-          <div className="relative mx-auto max-w-7xl px-5 sm:px-8 pb-16">
-            <dl className="cg-glass grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 rounded-2xl divide-white/10 [&>div]:p-6 divide-x divide-y lg:divide-y-0">
-              {stats.map(([v, l]) => (
-                <div key={l}>
-                  <dt className="cg-display text-4xl sm:text-5xl">{v}</dt>
+            {/* STATS */}
+            <dl className="mt-12 grid grid-cols-2 gap-px overflow-hidden rounded-3xl border border-white/10 bg-white/10 md:grid-cols-3 xl:grid-cols-6">
+              {stats.map(([v, l], i) => (
+                <div key={l} className="bg-[#0d1119] p-5 sm:p-6">
+                  <dt className={`cg-display text-3xl sm:text-4xl ${i === 0 ? 'text-[#ffb020]' : ''}`}>{v}</dt>
                   <dd className="mt-2 text-sm text-white/60">{l}</dd>
                 </div>
               ))}
@@ -124,199 +160,255 @@ export default function About() {
           </div>
         </section>
 
-        {/* FOUNDER */}
-        <section className="mx-auto max-w-7xl px-5 sm:px-8 py-20 md:py-28 grid lg:grid-cols-12 gap-12">
-          <div className="lg:col-span-5">
-            <div className="cg-glass rounded-2xl p-8">
-              <div className="cg-display flex h-28 w-28 items-center justify-center rounded-full bg-red-600 text-5xl">RA</div>
-              <h2 className="cg-display mt-6 text-5xl">Rishabh Arora</h2>
-              <p className="mt-2 text-white/60">Founder and lead host</p>
-              <dl className="mt-6 divide-y divide-white/10 border-t border-white/10 text-sm">
-                {[['Experience', '6+ years in automotive journalism'], ['Coverage', 'Domestic and international'], ['Languages', 'English and Hindi']].map(([k, v]) => (
-                  <div key={k} className="flex justify-between gap-4 py-3">
-                    <dt className="text-white/50">{k}</dt>
-                    <dd className="text-right font-semibold">{v}</dd>
+        {/* ================= FOUNDER ================= */}
+        <section className={`${section} border-t border-white/10`}>
+          <div className={`${wrap} grid gap-10 lg:grid-cols-12 lg:gap-12`}>
+            <div className="lg:col-span-5">
+              <div className={`${card} p-6 sm:p-8`}>
+                <div className="flex items-center gap-4">
+                  <span className="cg-display flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-[#ffb020] text-2xl text-black sm:h-20 sm:w-20 sm:text-3xl">
+                    RA
+                  </span>
+                  <div className="min-w-0">
+                    <h2 className="cg-display break-words text-2xl sm:text-3xl">Rishabh Arora</h2>
+                    <p className="mt-1 text-sm text-white/60">Founder and lead host</p>
                   </div>
-                ))}
-              </dl>
+                </div>
+                <dl className="mt-6 divide-y divide-white/10 border-t border-white/10 text-sm">
+                  {[['Experience', '6+ years in automotive journalism'], ['Coverage', 'Domestic and international'], ['Languages', 'English and Hindi']].map(([k, v]) => (
+                    <div key={k} className="flex justify-between gap-4 py-3.5">
+                      <dt className="shrink-0 text-white/50">{k}</dt>
+                      <dd className="text-right font-semibold">{v}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </div>
             </div>
-          </div>
 
-          <div className="lg:col-span-7 lg:pt-4">
-            <h2 className="cg-display text-5xl sm:text-7xl">Six years of straight talk on cars</h2>
-            <blockquote className="mt-8 border-l-4 border-red-600 pl-6 text-xl leading-relaxed text-white/85 max-w-2xl">
-              “Hi, my name is Rishabh Arora and I am the founder and the host at Car Guide Media. For over six years, Car Guide has been at the forefront of automotive journalism in India, delivering engaging, authentic, and unbiased content to millions of automobile enthusiasts all around the globe.”
-            </blockquote>
-            <p className="mt-8 max-w-2xl text-white/60 leading-relaxed">
-              Over 650,000,000 views and more than 500 cars, bikes and scooters reviewed. From track testing at the Buddh International Circuit to invitations at the Bangkok, Dubai, Singapore and Indonesia motor shows, we give Indian buyers raw, factual and transparent insight, with no sugarcoating on road tax, pricing or performance.
-            </p>
+            <div className="lg:col-span-7">
+              <h2 className={h2Cls}>Six years of straight talk on cars</h2>
+
+              <blockquote className="mt-8 rounded-3xl bg-[#dfe3e8] p-6 text-black sm:p-8">
+                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-black text-[#ffb020]" aria-hidden="true">
+                  <Check className="h-4 w-4" />
+                </span>
+                <p className="mt-4 text-base leading-relaxed sm:text-lg">
+                  “Hi, my name is Rishabh Arora and I am the founder and the host at Car Guide Media. For over six years, Car Guide has been at the forefront of automotive journalism in India, delivering engaging, authentic, and unbiased content to millions of automobile enthusiasts all around the globe.”
+                </p>
+              </blockquote>
+
+              <p className="mt-6 max-w-2xl leading-relaxed text-white/60">
+                Over 650,000,000 views and more than 500 cars, bikes and scooters reviewed. From track testing at the Buddh International Circuit to invitations at the Bangkok, Dubai, Singapore and Indonesia motor shows, we give Indian buyers raw, factual and transparent insight, with no sugarcoating on road tax, pricing or performance.
+              </p>
+            </div>
           </div>
         </section>
 
-        {/* INTERNATIONAL */}
-        <section className="bg-white text-black">
-          <div className="mx-auto max-w-7xl px-5 sm:px-8 py-20 md:py-28">
-            <div className="grid lg:grid-cols-12 gap-10">
-              <div className="lg:col-span-5">
-                <h2 className="cg-display text-6xl sm:text-8xl">On the ground, worldwide</h2>
-                <p className="mt-6 max-w-md text-black/65 leading-relaxed">
-                  Every year since 2023 the Grand Prix Team has invited us to cover the Bangkok International Motor Show, and we report firsthand from major shows across Dubai, Singapore and Indonesia.
-                </p>
+        {/* ================= INTERNATIONAL ================= */}
+        <section className={`${section} border-t border-white/10`}>
+          <div className={wrap}>
+            <div className="max-w-2xl">
+              <h2 className={h2Cls}>On the ground, worldwide</h2>
+              <p className="mt-4 leading-relaxed text-white/65">
+                Every year since 2023 the Grand Prix Team has invited us to cover the Bangkok International Motor Show, and we report firsthand from major shows across Dubai, Singapore and Indonesia.
+              </p>
+            </div>
+
+            <ul className={`${card} mt-10 divide-y divide-white/10 overflow-hidden`}>
+              {shows.map(([n, d, c]) => (
+                <li key={n} className="flex flex-col gap-3 p-5 transition-colors hover:bg-white/[0.03] sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:p-6">
+                  <div className="min-w-0">
+                    <h3 className="text-lg font-bold">{n}</h3>
+                    <p className="mt-1 text-sm text-white/60">{d}</p>
+                  </div>
+                  <span className="inline-flex w-fit shrink-0 items-center gap-1.5 rounded-full border border-emerald-400/40 bg-emerald-500/10 px-3 py-1.5 text-sm font-semibold text-emerald-300">
+                    <Globe className="h-4 w-4" aria-hidden="true" /> {c}
+                  </span>
+                </li>
+              ))}
+            </ul>
+
+            <h3 className="cg-display mt-16 break-words text-[clamp(1.5rem,4vw,2.25rem)]">Videos people keep watching</h3>
+            <ul className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {hits.map(([t, d]) => (
+                <li key={t} className={`${inner} p-6 transition-colors hover:border-[#ffb020]/60`}>
+                  <h4 className="text-lg font-bold">{t}</h4>
+                  <p className="mt-2 text-sm leading-relaxed text-white/60">{d}</p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+
+        {/* ================= AUDIENCE ================= */}
+        <section className={`${section} border-t border-white/10`}>
+          <div className={`${wrap} grid items-center gap-10 lg:grid-cols-2 lg:gap-14`}>
+            <div>
+              <h2 className={h2Cls}>Buyers about to decide</h2>
+              <p className="mt-4 max-w-lg leading-relaxed text-white/65">
+                Our viewers are active decision-makers aged 18 to 44 who check our unbiased reviews before buying a vehicle between ₹5 lakh and ₹1 crore.
+              </p>
+              <div className="mt-8 flex flex-wrap gap-x-10 gap-y-6">
+                <div>
+                  <div className="cg-display text-5xl text-[#ffb020] sm:text-6xl">94.4%</div>
+                  <div className="mt-1 text-sm text-white/60">male audience</div>
+                </div>
+                <div>
+                  <div className="cg-display text-5xl sm:text-6xl">76.5%</div>
+                  <div className="mt-1 text-sm text-white/60">aged 18 to 34</div>
+                </div>
               </div>
-              <ul className="lg:col-span-7 divide-y divide-black/15 border-y border-black/15">
-                {shows.map(([n, d, c]) => (
-                  <li key={n} className="flex items-start justify-between gap-6 py-6">
-                    <div>
-                      <h3 className="text-xl font-semibold">{n}</h3>
-                      <p className="mt-1 text-sm text-black/60">{d}</p>
-                    </div>
-                    <span className="flex shrink-0 items-center gap-1.5 text-sm font-semibold text-red-600">
-                      <Globe className="h-4 w-4" /> {c}
+            </div>
+
+            <div className={`${card} p-6 sm:p-8`}>
+              <h3 className="font-bold">Audience by age</h3>
+              <div className="mt-5 flex h-12 overflow-hidden rounded-full bg-white/5" role="img" aria-label="Age distribution bar">
+                {ages.map(([a, p], i) => (
+                  <div key={a} className={ageShade[i]} style={{ width: `${p}%` }} />
+                ))}
+              </div>
+              <ul className="mt-6 space-y-3 text-sm">
+                {ages.map(([a, p], i) => (
+                  <li key={a} className="flex items-center justify-between gap-4 border-b border-white/10 pb-3 last:border-b-0 last:pb-0">
+                    <span className="flex items-center gap-3">
+                      <span className={`h-3 w-3 rounded-full ${ageShade[i]}`} aria-hidden="true" />
+                      {a} years
                     </span>
+                    <span className="font-bold">{p}%</span>
                   </li>
                 ))}
               </ul>
             </div>
-
-            <h3 className="cg-display mt-24 text-4xl sm:text-5xl">Videos people keep watching</h3>
-            <ul className="mt-8 grid sm:grid-cols-2 lg:grid-cols-3 gap-px bg-black/15 border border-black/15">
-              {hits.map(([t, d]) => (
-                <li key={t} className="bg-white p-6">
-                  <h4 className="text-lg font-bold">{t}</h4>
-                  <p className="mt-2 text-sm text-black/60">{d}</p>
-                </li>
-              ))}
-            </ul>
           </div>
         </section>
 
-        {/* AUDIENCE */}
-        <section className="mx-auto max-w-7xl px-5 sm:px-8 py-20 md:py-28 grid lg:grid-cols-2 gap-14 items-center">
-          <div>
-            <h2 className="cg-display text-5xl sm:text-7xl">Buyers about to decide</h2>
-            <p className="mt-6 max-w-lg text-white/65 leading-relaxed">
-              Our viewers are active decision-makers aged 18 to 44 who check our unbiased reviews before buying a vehicle between ₹5 lakh and ₹1 crore.
-            </p>
-            <div className="mt-8 flex gap-10">
-              <div><div className="cg-display text-6xl text-red-600">94.4%</div><div className="mt-1 text-sm text-white/60">male audience</div></div>
-              <div><div className="cg-display text-6xl">76.5%</div><div className="mt-1 text-sm text-white/60">aged 18 to 34</div></div>
+        {/* ================= SERVICES ================= */}
+        <section className={`${section} border-t border-white/10`}>
+          <div className={wrap}>
+            <div className="rounded-[2rem] bg-[#ffb020] p-6 text-black sm:p-10 lg:p-14">
+              <h2 className="cg-display max-w-3xl break-words text-[clamp(1.75rem,5vw,3rem)]">What we make for your brand</h2>
+              <p className="mt-4 max-w-xl leading-relaxed text-black/75">
+                We’ve worked with OEMs, service providers and suppliers, and we build every campaign around return on investment.
+              </p>
+              <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                {services.map(([t, d]) => (
+                  <div key={t} className="rounded-2xl bg-[#080b11] p-6 text-white">
+                    <h3 className="cg-display break-words text-xl text-[#ffb020]">{t}</h3>
+                    <p className="mt-3 text-sm leading-relaxed text-white/70">{d}</p>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-
-          <div className="cg-glass rounded-2xl p-8">
-            <h3 className="font-semibold">Audience by age</h3>
-            <div className="mt-5 flex h-14 overflow-hidden rounded-lg" role="img" aria-label="Age distribution bar">
-              {ages.map(([a, p], i) => (
-                <div key={a} className={ageShade[i]} style={{ width: `${p}%` }} />
-              ))}
-            </div>
-            <ul className="mt-6 space-y-3 text-sm">
-              {ages.map(([a, p], i) => (
-                <li key={a} className="flex items-center justify-between">
-                  <span className="flex items-center gap-3"><span className={`h-3 w-3 rounded-sm ${ageShade[i]}`} />{a} years</span>
-                  <span className="font-semibold">{p}%</span>
-                </li>
-              ))}
-            </ul>
           </div>
         </section>
 
-        {/* SERVICES + GEAR */}
-        <section className="border-y border-white/10 bg-red-600">
-          <div className="mx-auto max-w-7xl px-5 sm:px-8 py-20 md:py-28">
-            <h2 className="cg-display text-5xl sm:text-7xl max-w-3xl">What we make for your brand</h2>
-            <p className="mt-5 max-w-xl text-white/90">
-              We’ve worked with OEMs, service providers and suppliers, and we build every campaign around return on investment.
-            </p>
-            <div className="mt-12 grid sm:grid-cols-2 lg:grid-cols-4 gap-px bg-black/30 border border-black/30">
-              {services.map(([t, d]) => (
-                <div key={t} className="bg-red-600 p-6 hover:bg-black transition">
-                  <h3 className="cg-display text-3xl">{t}</h3>
-                  <p className="mt-3 text-sm text-white/85 leading-relaxed">{d}</p>
+        {/* ================= GEAR ================= */}
+        <section className={`${section} border-t border-white/10`}>
+          <div className={wrap}>
+            <h2 className={h2Cls}>Cinema-grade kit</h2>
+            <div className="mt-10 grid gap-4 md:grid-cols-3">
+              {gear.map(([Icon, t, d]) => (
+                <div key={t} className={`${card} p-6 transition-colors hover:border-[#ffb020]/60`}>
+                  <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#ffb020]/15 text-[#ffb020]" aria-hidden="true">
+                    <Icon className="h-6 w-6" />
+                  </span>
+                  <h3 className="mt-5 text-lg font-bold">{t}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-white/60">{d}</p>
                 </div>
               ))}
             </div>
           </div>
         </section>
 
-        <section className="mx-auto max-w-7xl px-5 sm:px-8 py-20 md:py-28">
-          <h2 className="cg-display text-5xl sm:text-7xl">Cinema-grade kit</h2>
-          <div className="mt-10 grid md:grid-cols-3 gap-6">
-            {gear.map(([Icon, t, d]) => (
-              <div key={t} className="cg-glass rounded-2xl p-6">
-                <Icon className="h-7 w-7 text-red-500" />
-                <h3 className="mt-5 text-lg font-semibold">{t}</h3>
-                <p className="mt-2 text-sm text-white/60 leading-relaxed">{d}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* BRANDS */}
-        <section className="border-t border-white/10">
-          <div className="mx-auto max-w-7xl px-5 sm:px-8 py-20 md:py-28">
-            <h2 className="cg-display text-5xl sm:text-7xl">Brands we’ve worked with</h2>
-            <p className="mt-5 max-w-xl text-white/60">
+        {/* ================= BRANDS ================= */}
+        <section className={`${section} border-t border-white/10`}>
+          <div className={wrap}>
+            <h2 className={h2Cls}>Brands we’ve worked with</h2>
+            <p className="mt-4 max-w-xl leading-relaxed text-white/60">
               Automotive OEMs, suppliers, insurers, accessory makers and financial institutions across India.
             </p>
-            <p className="cg-display mt-10 text-3xl sm:text-5xl leading-[1.15] text-white/35">
+            <ul className="mt-8 flex flex-wrap gap-2.5 sm:gap-3">
               {brands.map((b) => (
-                <span key={b} className="hover:text-white transition-colors">
-                  {b}<span className="text-red-600"> / </span>
-                </span>
-              ))}
-            </p>
-          </div>
-        </section>
-
-        {/* TEAM */}
-        <section className="border-t border-white/10">
-          <div className="mx-auto max-w-7xl px-5 sm:px-8 py-20 md:py-28">
-            <h2 className="cg-display text-5xl sm:text-7xl">The crew behind the lens</h2>
-            <ul className="mt-10 divide-y divide-white/10 border-y border-white/10">
-              {team.map(([n, r, b]) => (
-                <li key={n} className="grid md:grid-cols-12 gap-2 md:gap-6 py-6 items-baseline">
-                  <h3 className="cg-display text-3xl md:col-span-4">{n}</h3>
-                  <p className="md:col-span-3 font-semibold text-red-500">{r}</p>
-                  <p className="md:col-span-5 text-sm text-white/60">{b}</p>
+                <li
+                  key={b}
+                  className="rounded-full border border-white/15 bg-[#0d1119] px-4 py-2 text-sm font-semibold text-white/85 transition-colors hover:border-[#ffb020] hover:bg-[#ffb020] hover:text-black sm:px-5 sm:py-2.5 sm:text-base"
+                >
+                  {b}
                 </li>
               ))}
             </ul>
           </div>
         </section>
 
-        {/* CONTACT */}
-        <section id="contact" className="bg-white text-black">
-          <div className="mx-auto max-w-7xl px-5 sm:px-8 py-20 md:py-28">
-            <h2 className="cg-display text-6xl sm:text-9xl">Let’s drive forward, together</h2>
-            <p className="mt-6 max-w-xl text-black/65">
-              Partner with a channel the automotive industry and millions of buyers trust, in India and abroad.
-            </p>
-
-            <div className="mt-12 grid md:grid-cols-3 gap-4">
-              <div className="border border-black/20 p-6">
-                <p className="text-sm text-black/50">Contact</p>
-                <p className="mt-1 text-lg font-bold">Rishabh Arora</p>
-                <p className="text-sm text-black/60">Founder and host</p>
-              </div>
-              <a href="mailto:Rishabh@thecarguide.in" className="border border-black/20 p-6 hover:bg-black hover:text-white transition">
-                <Mail className="h-5 w-5 text-red-600" />
-                <p className="mt-3 text-lg font-bold break-all">Rishabh@thecarguide.in</p>
-                <p className="text-sm opacity-60 break-all">thecarguide.rishabh@gmail.com</p>
-              </a>
-              <a href="tel:+919872851996" className="border border-black/20 p-6 hover:bg-black hover:text-white transition">
-                <Phone className="h-5 w-5 text-red-600" />
-                <p className="mt-3 text-lg font-bold">+91-98728-51996</p>
-                <p className="text-sm opacity-60">Direct media line</p>
-              </a>
-            </div>
-
-            <div className="mt-10 flex flex-wrap gap-x-8 gap-y-3 font-semibold">
-              {[['YouTube', 'https://youtube.com'], ['Instagram', 'https://instagram.com'], ['Facebook', 'https://facebook.com']].map(([n, u]) => (
-                <a key={n} href={u} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 hover:text-red-600">
-                  {n}: Car Guide Media <ArrowUpRight className="h-4 w-4" />
-                </a>
+        {/* ================= TEAM ================= */}
+        <section className={`${section} border-t border-white/10`}>
+          <div className={wrap}>
+            <h2 className={h2Cls}>The crew behind the lens</h2>
+            <ul className={`${card} mt-10 divide-y divide-white/10 overflow-hidden`}>
+              {team.map(([n, r, b]) => (
+                <li key={n} className="grid items-center gap-4 p-5 transition-colors hover:bg-white/[0.03] sm:p-6 md:grid-cols-12 md:gap-6">
+                  <div className="flex items-center gap-4 md:col-span-5">
+                    <span className="cg-display flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white/10 text-base text-[#ffb020]" aria-hidden="true">
+                      {initials(n)}
+                    </span>
+                    <div className="min-w-0">
+                      <h3 className="cg-display break-words text-xl">{n}</h3>
+                      <p className="mt-1 text-sm font-semibold text-[#ffb020]">{r}</p>
+                    </div>
+                  </div>
+                  <p className="text-sm leading-relaxed text-white/60 md:col-span-7">{b}</p>
+                </li>
               ))}
+            </ul>
+          </div>
+        </section>
+
+        {/* ================= CONTACT ================= */}
+        <section id="contact" className={`${section} scroll-mt-20 border-t border-white/10`}>
+          <div className={wrap}>
+            <div className="rounded-[2rem] bg-[#dfe3e8] p-6 text-black sm:p-10 lg:p-14">
+              <h2 className="cg-display max-w-3xl break-words text-[clamp(2rem,6vw,3.75rem)]">Let’s drive forward, together</h2>
+              <p className="mt-4 max-w-xl leading-relaxed text-black/70">
+                Partner with a channel the automotive industry and millions of buyers trust, in India and abroad.
+              </p>
+
+              <div className="mt-8 grid gap-4 md:grid-cols-3">
+                <div className="rounded-2xl bg-white/70 p-6">
+                  <p className="text-sm text-black/50">Contact</p>
+                  <p className="cg-display mt-1 break-words text-xl">Rishabh Arora</p>
+                  <p className="mt-1 text-sm text-black/60">Founder and host</p>
+                </div>
+                <a
+                  href="mailto:Rishabh@thecarguide.in"
+                  className={`group rounded-2xl bg-white/70 p-6 transition-colors hover:bg-black hover:text-white ${focusLight}`}
+                >
+                  <Mail className="h-5 w-5 text-[#b87400] group-hover:text-[#ffb020]" aria-hidden="true" />
+                  <p className="mt-3 break-all text-base font-bold sm:text-lg">Rishabh@thecarguide.in</p>
+                  <p className="mt-1 break-all text-sm opacity-60">thecarguide.rishabh@gmail.com</p>
+                </a>
+                <a
+                  href="tel:+919872851996"
+                  className={`group rounded-2xl bg-white/70 p-6 transition-colors hover:bg-black hover:text-white ${focusLight}`}
+                >
+                  <Phone className="h-5 w-5 text-[#b87400] group-hover:text-[#ffb020]" aria-hidden="true" />
+                  <p className="mt-3 text-base font-bold sm:text-lg">+91-98728-51996</p>
+                  <p className="mt-1 text-sm opacity-60">Direct media line</p>
+                </a>
+              </div>
+
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                {[['YouTube', 'https://youtube.com'], ['Instagram', 'https://instagram.com'], ['Facebook', 'https://facebook.com']].map(([n, u]) => (
+                  <a
+                    key={n}
+                    href={u}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`inline-flex items-center justify-center gap-1.5 rounded-full border border-black/25 px-5 py-2.5 text-sm font-semibold transition-colors hover:bg-black hover:text-white ${focusLight}`}
+                  >
+                    {n}: Car Guide Media <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
+                  </a>
+                ))}
+              </div>
             </div>
           </div>
         </section>

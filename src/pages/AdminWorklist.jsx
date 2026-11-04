@@ -25,23 +25,24 @@ import SEOHead from '../components/SEOHead';
 
 /*
   Admin layout
-  - Flat-black sidebar (nav + refresh + logout), light workspace so tables and forms stay readable
-  - Brand red #dc2626 only for the primary action in each view, focus rings and pending status
+  - Flat-black canvas with a faint red glow, frosted-glass panels on top
+  - Sidebar is pure black with a slanted red marker on the active item
+  - Brand red #dc2626 is reserved for the primary action in each view, focus rings and pending status
   - Add Car: two-column form with a sticky photos + publish column
-  - Edit Car: slide-over drawer with sticky header and footer
+  - Edit Car: glass slide-over drawer with sticky header and footer
 */
 
 const focusRing =
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#dc2626] focus-visible:ring-offset-2';
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#dc2626] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0a0b]';
 
 const inputCls =
-  'w-full rounded-xl border border-black/15 bg-white px-3.5 py-2.5 text-sm text-black placeholder:text-black/40 transition-colors focus:border-[#dc2626] focus:outline-none focus:ring-2 focus:ring-[#dc2626]/20';
-const fileCls = `${inputCls} p-2 file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-black file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-white hover:file:bg-[#dc2626]`;
+  '[color-scheme:dark] w-full rounded-xl border border-white/10 bg-white/[0.05] px-3.5 py-2.5 text-sm text-white placeholder:text-white/35 transition-all focus:border-[#dc2626] focus:bg-white/[0.08] focus:outline-none focus:ring-4 focus:ring-[#dc2626]/20';
+const fileCls = `${inputCls} p-2 file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-white/15 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-white hover:file:bg-[#dc2626]`;
 
-const btnPrimary = `inline-flex items-center justify-center gap-2 rounded-xl bg-[#dc2626] px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-[#b91c1c] disabled:cursor-not-allowed disabled:opacity-60 ${focusRing}`;
-const btnDark = `inline-flex items-center justify-center gap-2 rounded-xl bg-black px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-black/80 disabled:opacity-60 ${focusRing}`;
-const btnGhost = `inline-flex items-center justify-center gap-2 rounded-xl border border-black/15 bg-white px-4 py-2.5 text-sm font-semibold text-black transition-colors hover:bg-black/5 ${focusRing}`;
-const iconBtnDanger = `rounded-lg border border-red-200 p-2 text-red-600 transition-colors hover:bg-red-50 disabled:opacity-40 ${focusRing}`;
+const btnPrimary = `inline-flex items-center justify-center gap-2 rounded-xl bg-[#dc2626] px-5 py-2.5 text-sm font-bold text-white shadow-[0_10px_30px_-10px_rgba(220,38,38,0.8)] transition-all hover:-translate-y-0.5 hover:bg-[#ef4444] disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none ${focusRing}`;
+const btnDark = `inline-flex items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-white/20 disabled:opacity-60 ${focusRing}`;
+const btnGhost = `inline-flex items-center justify-center gap-2 rounded-xl border border-white/15 bg-transparent px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-white/10 ${focusRing}`;
+const iconBtnDanger = `rounded-lg border border-red-500/30 p-2 text-red-400 transition-colors hover:bg-red-500/15 disabled:opacity-40 ${focusRing}`;
 
 const tabs = [
   { id: 'leads', label: 'Leads', icon: Users },
@@ -93,20 +94,26 @@ const apiErrorText = (error) => {
 function Field({ label, hint, className = '', children }) {
   return (
     <label className={`block ${className}`}>
-      <span className="mb-1.5 block text-sm font-medium text-black/80">{label}</span>
+      <span className="mb-1.5 block text-sm font-medium text-white/75">{label}</span>
       {children}
-      {hint && <span className="mt-1 block text-xs text-black/50">{hint}</span>}
+      {hint && <span className="mt-1 block text-xs text-white/45">{hint}</span>}
     </label>
   );
 }
 
 function Panel({ title, icon: Icon, action, children, className = '' }) {
   return (
-    <section className={`rounded-2xl border border-black/10 bg-white p-5 sm:p-6 ${className}`}>
+    <section
+      className={`rounded-3xl border border-white/10 bg-gradient-to-b from-white/[0.07] to-white/[0.02] p-5 shadow-[0_20px_50px_-30px_rgba(0,0,0,0.9)] backdrop-blur-xl sm:p-6 ${className}`}
+    >
       {(title || action) && (
         <div className="mb-5 flex items-center justify-between gap-3">
-          <h3 className="flex items-center gap-2 text-base font-bold tracking-tight">
-            {Icon && <Icon size={18} className="text-[#dc2626]" aria-hidden="true" />}
+          <h3 className="flex items-center gap-2.5 text-base font-bold tracking-tight text-white">
+            {Icon && (
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#dc2626]/15 text-[#f87171]">
+                <Icon size={16} aria-hidden="true" />
+              </span>
+            )}
             {title}
           </h3>
           {action}
@@ -119,8 +126,8 @@ function Panel({ title, icon: Icon, action, children, className = '' }) {
 
 function Toggle({ label, ...props }) {
   return (
-    <label className="inline-flex cursor-pointer items-center gap-2.5 text-sm font-medium text-black/80">
-      <input type="checkbox" className="h-4 w-4 rounded border-black/30 accent-[#dc2626]" {...props} />
+    <label className="inline-flex cursor-pointer items-center gap-2.5 text-sm font-medium text-white/80">
+      <input type="checkbox" className="h-4 w-4 rounded border-white/30 accent-[#dc2626]" {...props} />
       {label}
     </label>
   );
@@ -129,10 +136,14 @@ function Toggle({ label, ...props }) {
 function StatusPill({ exported }) {
   return (
     <span
-      className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
-        exported ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
+      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${
+        exported ? 'bg-green-500/15 text-green-300' : 'bg-red-500/15 text-red-300'
       }`}
     >
+      <span
+        className={`h-1.5 w-1.5 rounded-full ${exported ? 'bg-green-400' : 'bg-[#ef4444]'}`}
+        aria-hidden="true"
+      />
       {exported ? 'Exported' : 'Pending'}
     </span>
   );
@@ -486,15 +497,39 @@ export default function AdminWorklist({ onLogout }) {
     <>
       <SEOHead title="Admin Panel | Car Guide Media" description="Protected admin lead and car management dashboard." />
 
-      <div className="min-h-screen bg-[#f4f4f4] text-black">
+      <div className="relative min-h-screen overflow-x-clip bg-[#0a0a0b] text-white">
+        {/* ambient backdrop */}
+        <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-0">
+          <div className="absolute -right-40 -top-40 h-[34rem] w-[34rem] rounded-full bg-[#dc2626]/20 blur-[140px]" />
+          <div className="absolute -bottom-48 left-1/3 h-[28rem] w-[28rem] rounded-full bg-[#dc2626]/10 blur-[160px]" />
+          <div
+            className="absolute inset-0 opacity-[0.05]"
+            style={{
+              backgroundImage:
+                'linear-gradient(to right, #fff 1px, transparent 1px), linear-gradient(to bottom, #fff 1px, transparent 1px)',
+              backgroundSize: '56px 56px',
+              maskImage: 'radial-gradient(ellipse at 70% 0%, black 10%, transparent 65%)',
+              WebkitMaskImage: 'radial-gradient(ellipse at 70% 0%, black 10%, transparent 65%)',
+            }}
+          />
+        </div>
+
         {/* SIDEBAR (desktop) */}
-        <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col bg-black text-white lg:flex">
-          <div className="px-6 pb-6 pt-8">
-            <p className="text-xl font-extrabold tracking-tight">Car Guide Media</p>
-            <p className="mt-1 text-sm text-white/55">Admin dashboard</p>
+        <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-white/10 bg-black text-white lg:flex">
+          <div className="px-6 pb-8 pt-8">
+            <div className="flex items-center gap-3">
+              <span className="relative flex h-10 w-10 items-center justify-center" aria-hidden="true">
+                <span className="absolute inset-0 -skew-x-12 rounded-md bg-[#dc2626] shadow-[0_0_28px_rgba(220,38,38,0.6)]" />
+                <Car size={20} className="relative text-white" />
+              </span>
+              <div>
+                <p className="text-lg font-black leading-tight tracking-tight">Car Guide Media</p>
+                <p className="text-sm text-white/50">Admin dashboard</p>
+              </div>
+            </div>
           </div>
 
-          <nav className="flex-1 space-y-1 px-3" aria-label="Admin sections">
+          <nav className="flex-1 space-y-1.5 px-3" aria-label="Admin sections">
             {tabs.map(({ id, label, icon: Icon }) => {
               const active = activeTab === id;
               return (
@@ -503,15 +538,18 @@ export default function AdminWorklist({ onLogout }) {
                   type="button"
                   onClick={() => setActiveTab(id)}
                   aria-current={active ? 'page' : undefined}
-                  className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-base font-semibold transition-colors ${focusRing} focus-visible:ring-offset-black ${
-                    active ? 'bg-white/10 text-white' : 'text-white/60 hover:bg-white/5 hover:text-white'
+                  className={`group relative flex w-full items-center gap-3 overflow-hidden rounded-xl px-3 py-3 text-left text-base font-semibold transition-colors ${focusRing} focus-visible:ring-offset-black ${
+                    active ? 'bg-gradient-to-r from-[#dc2626]/25 to-transparent text-white' : 'text-white/55 hover:bg-white/5 hover:text-white'
                   }`}
                 >
-                  <span className={`h-5 w-1 rounded-full ${active ? 'bg-[#dc2626]' : 'bg-transparent'}`} aria-hidden="true" />
+                  <span
+                    className={`h-6 w-1 -skew-x-12 rounded-full transition-colors ${active ? 'bg-[#dc2626] shadow-[0_0_12px_rgba(220,38,38,0.9)]' : 'bg-transparent'}`}
+                    aria-hidden="true"
+                  />
                   <Icon size={18} aria-hidden="true" />
                   <span className="flex-1">{label}</span>
                   {tabCounts[id] !== undefined && (
-                    <span className="rounded-full bg-white/10 px-2.5 py-0.5 text-xs font-bold text-white/80">
+                    <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${active ? 'bg-[#dc2626] text-white' : 'bg-white/10 text-white/75'}`}>
                       {tabCounts[id]}
                     </span>
                   )}
@@ -524,14 +562,14 @@ export default function AdminWorklist({ onLogout }) {
             <button
               type="button"
               onClick={handleRefresh}
-              className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-white/70 transition-colors hover:bg-white/5 hover:text-white ${focusRing} focus-visible:ring-offset-black`}
+              className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-white/65 transition-colors hover:bg-white/5 hover:text-white ${focusRing} focus-visible:ring-offset-black`}
             >
               <RefreshCw size={16} aria-hidden="true" /> Refresh data
             </button>
             <button
               type="button"
               onClick={handleLogout}
-              className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-white/70 transition-colors hover:bg-white/5 hover:text-white ${focusRing} focus-visible:ring-offset-black`}
+              className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-white/65 transition-colors hover:bg-white/5 hover:text-white ${focusRing} focus-visible:ring-offset-black`}
             >
               <LogOut size={16} aria-hidden="true" /> Log out
             </button>
@@ -539,9 +577,12 @@ export default function AdminWorklist({ onLogout }) {
         </aside>
 
         {/* TOP BAR (mobile / tablet) */}
-        <header className="sticky top-0 z-30 bg-black text-white lg:hidden">
+        <header className="sticky top-0 z-30 border-b border-white/10 bg-black/85 text-white backdrop-blur-xl lg:hidden">
           <div className="flex items-center justify-between px-4 py-3 sm:px-6">
-            <p className="text-lg font-extrabold tracking-tight">Admin</p>
+            <p className="flex items-center gap-2.5 text-lg font-black tracking-tight">
+              <span className="h-5 w-2 -skew-x-12 rounded-sm bg-[#dc2626]" aria-hidden="true" />
+              Admin
+            </p>
             <div className="flex items-center gap-2">
               <button
                 type="button"
@@ -571,7 +612,7 @@ export default function AdminWorklist({ onLogout }) {
                   onClick={() => setActiveTab(id)}
                   aria-current={active ? 'page' : undefined}
                   className={`flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold ${focusRing} focus-visible:ring-offset-black ${
-                    active ? 'bg-white text-black' : 'bg-white/10 text-white/75'
+                    active ? 'bg-[#dc2626] text-white shadow-[0_8px_24px_-8px_rgba(220,38,38,0.8)]' : 'bg-white/10 text-white/75'
                   }`}
                 >
                   <Icon size={15} aria-hidden="true" />
@@ -584,12 +625,15 @@ export default function AdminWorklist({ onLogout }) {
         </header>
 
         {/* WORKSPACE */}
-        <main className="lg:pl-64">
+        <main className="relative z-10 lg:pl-64">
           <div className="mx-auto w-full max-w-[1280px] space-y-6 px-4 py-8 sm:px-6 lg:px-10 lg:py-10">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">{pageTitle}</h1>
-                <p className="mt-2 max-w-[60ch] text-base text-black/60">{pageIntro}</p>
+              <div className="flex items-stretch gap-4">
+                <span className="w-1.5 shrink-0 -skew-x-12 rounded-full bg-gradient-to-b from-[#dc2626] to-[#dc2626]/10" aria-hidden="true" />
+                <div>
+                  <h1 className="text-4xl font-black tracking-[-0.04em] sm:text-5xl">{pageTitle}</h1>
+                  <p className="mt-2 max-w-[60ch] text-base text-white/55">{pageIntro}</p>
+                </div>
               </div>
 
               {activeTab === 'leads' && (
@@ -617,14 +661,14 @@ export default function AdminWorklist({ onLogout }) {
                   action={
                     <div className="flex items-center gap-3 text-sm">
                       {activeFilterCount > 0 && (
-                        <span className="rounded-full bg-black px-2.5 py-0.5 text-xs font-bold text-white">
+                        <span className="rounded-full bg-[#dc2626] px-2.5 py-0.5 text-xs font-bold text-white">
                           {activeFilterCount} active
                         </span>
                       )}
                       <button
                         type="button"
                         onClick={resetLeadFilters}
-                        className={`rounded-sm font-semibold underline underline-offset-4 hover:text-[#dc2626] ${focusRing}`}
+                        className={`rounded-sm font-semibold text-white/80 underline underline-offset-4 hover:text-[#f87171] ${focusRing}`}
                       >
                         Reset all
                       </button>
@@ -634,7 +678,7 @@ export default function AdminWorklist({ onLogout }) {
                   <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-12">
                     <Field label="Search" className="lg:col-span-4">
                       <div className="relative">
-                        <Search size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-black/40" aria-hidden="true" />
+                        <Search size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-white/40" aria-hidden="true" />
                         <input
                           type="text"
                           placeholder="Name, phone number or city"
@@ -647,7 +691,7 @@ export default function AdminWorklist({ onLogout }) {
 
                     <Field label="Date range" className="lg:col-span-2">
                       <div className="relative">
-                        <Calendar size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-black/40" aria-hidden="true" />
+                        <Calendar size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-white/40" aria-hidden="true" />
                         <select value={datePreset} onChange={(e) => setDatePreset(e.target.value)} className={`${inputCls} pl-10`}>
                           <option value="all">All time</option>
                           <option value="today">Today</option>
@@ -661,7 +705,7 @@ export default function AdminWorklist({ onLogout }) {
 
                     <Field label="State" className="lg:col-span-2">
                       <div className="relative">
-                        <MapPin size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-black/40" aria-hidden="true" />
+                        <MapPin size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-white/40" aria-hidden="true" />
                         <select value={stateFilter} onChange={(e) => setStateFilter(e.target.value)} className={`${inputCls} pl-10`}>
                           <option value="all">All states</option>
                           {states.map((s) => (
@@ -673,7 +717,7 @@ export default function AdminWorklist({ onLogout }) {
 
                     <Field label="Car or model" className="lg:col-span-2">
                       <div className="relative">
-                        <Car size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-black/40" aria-hidden="true" />
+                        <Car size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-white/40" aria-hidden="true" />
                         <input
                           type="text"
                           placeholder="e.g. Swift, Creta"
@@ -686,7 +730,7 @@ export default function AdminWorklist({ onLogout }) {
 
                     <Field label="Export status" className="lg:col-span-2">
                       <div className="relative">
-                        <Tag size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-black/40" aria-hidden="true" />
+                        <Tag size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-white/40" aria-hidden="true" />
                         <select value={leadExportFilter} onChange={(e) => setLeadExportFilter(e.target.value)} className={`${inputCls} pl-10`}>
                           <option value="all">All</option>
                           <option value="false">Pending export</option>
@@ -708,13 +752,16 @@ export default function AdminWorklist({ onLogout }) {
                   </div>
                 </Panel>
 
-                <section className="overflow-hidden rounded-2xl border border-black/10 bg-white" aria-busy={leadsLoading}>
+                <section
+                  className="overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-b from-white/[0.06] to-white/[0.02] backdrop-blur-xl"
+                  aria-busy={leadsLoading}
+                >
                   {leadsLoading ? (
-                    <div className="p-12 text-center text-black/60" role="status">Loading leads…</div>
+                    <div className="p-12 text-center text-white/60" role="status">Loading leads…</div>
                   ) : leads.length === 0 ? (
                     <div className="p-12 text-center">
                       <p className="text-xl font-bold tracking-tight">No leads match these filters</p>
-                      <p className="mt-2 text-black/60">Widen the date range or clear the state and car filters.</p>
+                      <p className="mt-2 text-white/55">Widen the date range or clear the state and car filters.</p>
                       {activeFilterCount > 0 && (
                         <button type="button" onClick={resetLeadFilters} className={`${btnDark} mt-6`}>
                           Reset all filters
@@ -724,7 +771,7 @@ export default function AdminWorklist({ onLogout }) {
                   ) : (
                     <div className="overflow-x-auto">
                       <table className="min-w-full text-left text-sm">
-                        <thead className="border-b border-black/10 bg-[#f4f4f4] text-black/60">
+                        <thead className="border-b border-white/10 bg-black/40 text-white/55">
                           <tr>
                             <th scope="col" className="px-5 py-3.5 font-semibold">Lead</th>
                             <th scope="col" className="px-5 py-3.5 font-semibold">Vehicle</th>
@@ -734,27 +781,27 @@ export default function AdminWorklist({ onLogout }) {
                             <th scope="col" className="px-5 py-3.5"><span className="sr-only">Actions</span></th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-black/10">
+                        <tbody className="divide-y divide-white/10">
                           {leads.map((lead) => (
-                            <tr key={lead.id} className="align-top transition-colors hover:bg-black/[0.03]">
+                            <tr key={lead.id} className="align-top transition-colors hover:bg-white/[0.04]">
                               <td className="px-5 py-4">
                                 <p className="font-bold">{lead.name}</p>
-                                <p className="mt-0.5 font-mono text-[#b91c1c]">{lead.phone_number}</p>
-                                <p className="mt-0.5 text-black/55">
+                                <p className="mt-0.5 font-mono text-[#f87171]">{lead.phone_number}</p>
+                                <p className="mt-0.5 text-white/50">
                                   {[lead.city, lead.state_name].filter(Boolean).join(', ') || '—'}
                                 </p>
                               </td>
                               <td className="px-5 py-4">
                                 <p className="font-bold">{lead.vehicle_name_snapshot}</p>
-                                <p className="mt-0.5 text-black/55">{lead.brand_snapshot}</p>
+                                <p className="mt-0.5 text-white/50">{lead.brand_snapshot}</p>
                               </td>
                               <td className="whitespace-nowrap px-5 py-4">
-                                <p className="font-bold">{formatINR(lead.on_road_price_calculated)}</p>
-                                <p className="mt-0.5 text-black/55">Ex-showroom {formatINR(lead.ex_showroom_price_at_query)}</p>
+                                <p className="text-base font-extrabold tracking-tight">{formatINR(lead.on_road_price_calculated)}</p>
+                                <p className="mt-0.5 text-white/50">Ex-showroom {formatINR(lead.ex_showroom_price_at_query)}</p>
                               </td>
                               <td className="px-5 py-4">
-                                <p>{lead.source_page || '—'}</p>
-                                <p className="mt-0.5 text-black/55">
+                                <p className="text-white/85">{lead.source_page || '—'}</p>
+                                <p className="mt-0.5 text-white/50">
                                   {lead.created_at ? new Date(lead.created_at).toLocaleString('en-IN') : '—'}
                                 </p>
                               </td>
@@ -778,9 +825,9 @@ export default function AdminWorklist({ onLogout }) {
                   )}
 
                   {!leadsLoading && leads.length > 0 && (
-                    <div className="flex flex-col items-start justify-between gap-3 border-t border-black/10 px-5 py-4 text-sm sm:flex-row sm:items-center">
-                      <span className="text-black/60">
-                        Page <strong className="text-black">{leadPage}</strong> of <strong className="text-black">{leadPageCount}</strong> · {leadCount} total leads
+                    <div className="flex flex-col items-start justify-between gap-3 border-t border-white/10 bg-black/30 px-5 py-4 text-sm sm:flex-row sm:items-center">
+                      <span className="text-white/55">
+                        Page <strong className="text-white">{leadPage}</strong> of <strong className="text-white">{leadPageCount}</strong> · {leadCount} total leads
                       </span>
                       <div className="flex gap-2">
                         <button type="button" disabled={leadPage === 1} onClick={() => setLeadPage((page) => page - 1)} className={`${btnGhost} px-4 py-2 disabled:opacity-40`}>
@@ -802,7 +849,7 @@ export default function AdminWorklist({ onLogout }) {
                 <div className="flex flex-col gap-3 sm:flex-row">
                   <div className="relative flex-1">
                     <label htmlFor="car-search" className="sr-only">Search cars</label>
-                    <Search size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-black/40" aria-hidden="true" />
+                    <Search size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-white/40" aria-hidden="true" />
                     <input
                       id="car-search"
                       type="search"
@@ -827,13 +874,13 @@ export default function AdminWorklist({ onLogout }) {
                 </div>
 
                 {adminCarsLoading ? (
-                  <div className="rounded-2xl border border-black/10 bg-white p-12 text-center text-black/60" role="status">
+                  <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-12 text-center text-white/60 backdrop-blur-xl" role="status">
                     Loading cars…
                   </div>
                 ) : adminCars.length === 0 ? (
-                  <div className="rounded-2xl border border-black/10 bg-white p-12 text-center">
+                  <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-12 text-center backdrop-blur-xl">
                     <p className="text-xl font-bold tracking-tight">No cars found</p>
-                    <p className="mt-2 text-black/60">Try a different search, or add a new car.</p>
+                    <p className="mt-2 text-white/55">Try a different search, or add a new car.</p>
                   </div>
                 ) : (
                   <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
@@ -841,8 +888,11 @@ export default function AdminWorklist({ onLogout }) {
                       const primaryImg = toAppMediaUrl(car.primary_image);
                       const startPrice = car.starting_price || car.ex_showroom_price;
                       return (
-                        <article key={car.id} className="group flex flex-col overflow-hidden rounded-2xl border border-black/10 bg-white">
-                          <div className="relative aspect-[16/10] overflow-hidden bg-[#eeeeee]">
+                        <article
+                          key={car.id}
+                          className="group flex flex-col overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-b from-white/[0.07] to-white/[0.02] shadow-[0_20px_50px_-30px_rgba(0,0,0,0.9)] backdrop-blur-xl transition-colors hover:border-[#dc2626]/50"
+                        >
+                          <div className="relative aspect-[16/10] overflow-hidden bg-black">
                             {primaryImg ? (
                               <img
                                 src={primaryImg}
@@ -851,14 +901,15 @@ export default function AdminWorklist({ onLogout }) {
                                 loading="lazy"
                               />
                             ) : (
-                              <div className="flex h-full w-full flex-col items-center justify-center text-black/35">
+                              <div className="flex h-full w-full flex-col items-center justify-center text-white/30">
                                 <ImageIcon size={32} aria-hidden="true" />
                                 <span className="mt-1 text-sm">No photo yet</span>
                               </div>
                             )}
+                            <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/70 to-transparent" />
                             <div className="absolute left-3 top-3 flex gap-2">
                               {car.is_featured && (
-                                <span className="rounded-full bg-black px-2.5 py-1 text-xs font-bold text-white">Featured</span>
+                                <span className="rounded-full bg-black/80 px-2.5 py-1 text-xs font-bold text-white backdrop-blur">Featured</span>
                               )}
                               {car.is_tba && (
                                 <span className="rounded-full bg-white px-2.5 py-1 text-xs font-bold text-black">TBA</span>
@@ -871,35 +922,35 @@ export default function AdminWorklist({ onLogout }) {
 
                           <div className="flex flex-1 flex-col gap-4 p-5">
                             <div>
-                              <p className="text-sm font-medium text-black/55">{car.brand_name || car.brand?.name}</p>
-                              <h3 className="mt-0.5 text-xl font-extrabold tracking-tight">{car.name}</h3>
+                              <p className="text-sm font-medium text-white/50">{car.brand_name || car.brand?.name}</p>
+                              <h3 className="mt-0.5 text-2xl font-black tracking-[-0.03em]">{car.name}</h3>
                               <div className="mt-3 flex flex-wrap gap-2 text-xs font-medium">
-                                {car.body_type && <span className="rounded-full bg-[#eeeeee] px-3 py-1">{car.body_type}</span>}
-                                {car.fuel_type && <span className="rounded-full bg-[#eeeeee] px-3 py-1">{car.fuel_type}</span>}
+                                {car.body_type && <span className="rounded-full bg-white/10 px-3 py-1 text-white/80">{car.body_type}</span>}
+                                {car.fuel_type && <span className="rounded-full bg-white/10 px-3 py-1 text-white/80">{car.fuel_type}</span>}
                                 {car.ev_hybrid_cng_flag && car.ev_hybrid_cng_flag !== 'No' && (
-                                  <span className="rounded-full bg-green-50 px-3 py-1 text-green-700">{car.ev_hybrid_cng_flag}</span>
+                                  <span className="rounded-full bg-green-500/15 px-3 py-1 text-green-300">{car.ev_hybrid_cng_flag}</span>
                                 )}
                               </div>
                             </div>
 
-                            <dl className="space-y-1.5 rounded-xl bg-[#f4f4f4] p-3.5 text-sm">
-                              <div className="flex justify-between gap-3">
-                                <dt className="text-black/60">Starting price</dt>
-                                <dd className="font-bold">{startPrice ? formatINR(startPrice) : 'TBA'}</dd>
+                            <dl className="space-y-1.5 rounded-2xl border border-white/10 bg-black/40 p-3.5 text-sm">
+                              <div className="flex items-baseline justify-between gap-3">
+                                <dt className="text-white/55">Starting price</dt>
+                                <dd className="text-lg font-extrabold tracking-tight">{startPrice ? formatINR(startPrice) : 'TBA'}</dd>
                               </div>
                               {car.top_variant_price && (
                                 <div className="flex justify-between gap-3">
-                                  <dt className="text-black/60">Top variant</dt>
-                                  <dd className="font-semibold">{formatINR(car.top_variant_price)}</dd>
+                                  <dt className="text-white/55">Top variant</dt>
+                                  <dd className="font-semibold text-white/85">{formatINR(car.top_variant_price)}</dd>
                                 </div>
                               )}
                             </dl>
 
-                            <div className="mt-auto flex items-center justify-between gap-2 border-t border-black/10 pt-4">
+                            <div className="mt-auto flex items-center justify-between gap-2 border-t border-white/10 pt-4">
                               <Link
                                 to={`/vehicles/${car.slug}`}
                                 target="_blank"
-                                className={`inline-flex items-center gap-1.5 rounded-sm text-sm font-semibold text-black/65 hover:text-black ${focusRing}`}
+                                className={`inline-flex items-center gap-1.5 rounded-sm text-sm font-semibold text-white/60 hover:text-white ${focusRing}`}
                               >
                                 <Eye size={15} aria-hidden="true" /> View
                               </Link>
@@ -1027,48 +1078,55 @@ export default function AdminWorklist({ onLogout }) {
         <div
           role="status"
           aria-live="polite"
-          className={`fixed bottom-5 right-5 z-[60] flex max-w-sm items-start gap-3 rounded-2xl px-5 py-4 text-sm font-semibold text-white shadow-2xl ${
-            toast.tone === 'error' ? 'bg-[#dc2626]' : 'bg-black'
+          className={`fixed bottom-5 right-5 z-[60] flex max-w-sm items-start gap-3 rounded-2xl border px-5 py-4 text-sm font-semibold text-white shadow-2xl backdrop-blur-xl ${
+            toast.tone === 'error'
+              ? 'border-red-400/40 bg-[#dc2626]/90 shadow-[0_20px_50px_-15px_rgba(220,38,38,0.7)]'
+              : 'border-white/15 bg-black/85'
           }`}
         >
-          {toast.tone === 'error' ? <X size={18} className="mt-0.5 shrink-0" aria-hidden="true" /> : <Check size={18} className="mt-0.5 shrink-0" aria-hidden="true" />}
+          {toast.tone === 'error' ? <X size={18} className="mt-0.5 shrink-0" aria-hidden="true" /> : <Check size={18} className="mt-0.5 shrink-0 text-green-400" aria-hidden="true" />}
           <span>{toast.message}</span>
         </div>
       )}
 
       {/* EDIT DRAWER */}
       {editingVehicle && (
-        <div className="fixed inset-0 z-50 flex justify-end">
+        <div className="fixed inset-0 z-50 flex justify-end text-white">
           <button
             type="button"
             aria-label="Close editor"
             onClick={() => setEditingVehicle(null)}
-            className="absolute inset-0 cursor-default bg-black/50 backdrop-blur-sm"
+            className="absolute inset-0 cursor-default bg-black/70 backdrop-blur-sm"
           />
           <div
             role="dialog"
             aria-modal="true"
             aria-labelledby="edit-car-title"
-            className="relative flex h-full w-full max-w-3xl flex-col bg-[#f4f4f4] shadow-2xl"
+            className="relative flex h-full w-full max-w-3xl flex-col border-l border-white/10 bg-[#0a0a0b] shadow-2xl"
           >
-            <div className="flex items-start justify-between gap-4 border-b border-black/10 bg-white px-6 py-5">
-              <div>
-                <p className="text-sm font-medium text-black/55">Edit car</p>
-                <h2 id="edit-car-title" className="text-2xl font-extrabold tracking-tight">
-                  {editingVehicle.brand_name || editingVehicle.brand?.name} {editingVehicle.name}
-                </h2>
+            <div aria-hidden="true" className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-[#dc2626]/20 blur-[110px]" />
+
+            <div className="relative flex items-start justify-between gap-4 border-b border-white/10 bg-black/60 px-6 py-5 backdrop-blur-xl">
+              <div className="flex items-stretch gap-3">
+                <span className="w-1 shrink-0 -skew-x-12 rounded-full bg-[#dc2626]" aria-hidden="true" />
+                <div>
+                  <p className="text-sm font-medium text-white/50">Edit car</p>
+                  <h2 id="edit-car-title" className="text-2xl font-black tracking-[-0.03em]">
+                    {editingVehicle.brand_name || editingVehicle.brand?.name} {editingVehicle.name}
+                  </h2>
+                </div>
               </div>
               <button
                 type="button"
                 onClick={() => setEditingVehicle(null)}
                 aria-label="Close editor"
-                className={`rounded-full border border-black/15 p-2.5 hover:bg-black/5 ${focusRing}`}
+                className={`rounded-full border border-white/20 p-2.5 hover:bg-white/10 ${focusRing}`}
               >
                 <X size={18} aria-hidden="true" />
               </button>
             </div>
 
-            <form onSubmit={handleSaveVehicleEdit} className="flex min-h-0 flex-1 flex-col">
+            <form onSubmit={handleSaveVehicleEdit} className="relative flex min-h-0 flex-1 flex-col">
               <div className="flex-1 space-y-5 overflow-y-auto px-6 py-6">
                 <Panel title="Prices (₹)" icon={IndianRupee}>
                   <div className="grid gap-4 sm:grid-cols-3">
@@ -1099,7 +1157,7 @@ export default function AdminWorklist({ onLogout }) {
                       return (
                         <div
                           key={varItem.id || `new-${idx}`}
-                          className="grid items-center gap-2 rounded-xl bg-[#f4f4f4] p-3 sm:grid-cols-[2fr_1.3fr_1fr_1fr_auto]"
+                          className="grid items-center gap-2 rounded-2xl border border-white/10 bg-black/40 p-3 sm:grid-cols-[2fr_1.3fr_1fr_1fr_auto]"
                         >
                           <input
                             type="text"
@@ -1145,7 +1203,7 @@ export default function AdminWorklist({ onLogout }) {
                       );
                     })}
                     {visibleEditVariants.length === 0 && (
-                      <p className="py-3 text-center text-sm text-black/55">
+                      <p className="py-3 text-center text-sm text-white/50">
                         No variants yet. Use “Add variant” to add specific trims.
                       </p>
                     )}
@@ -1155,10 +1213,10 @@ export default function AdminWorklist({ onLogout }) {
                 <Panel title="Photos" icon={ImageIcon}>
                   {editingVehicle.images && editingVehicle.images.length > 0 && (
                     <div className="mb-5">
-                      <p className="mb-2 text-sm font-medium text-black/70">Current photos</p>
+                      <p className="mb-2 text-sm font-medium text-white/70">Current photos</p>
                       <div className="flex flex-wrap gap-3">
                         {editingVehicle.images.map((img) => (
-                          <div key={img.id} className="relative h-20 w-32 overflow-hidden rounded-lg bg-[#eeeeee]">
+                          <div key={img.id} className="relative h-20 w-32 overflow-hidden rounded-xl border border-white/10 bg-black">
                             <img src={toAppMediaUrl(img.image_url)} alt={img.image_type} className="h-full w-full object-cover" />
                             <span className="absolute bottom-1 left-1 rounded bg-black/75 px-1.5 py-0.5 text-[10px] font-bold text-white">
                               {img.image_type}
@@ -1204,7 +1262,7 @@ export default function AdminWorklist({ onLogout }) {
                     </Field>
                   </div>
 
-                  <div className="mt-5 flex flex-wrap gap-x-8 gap-y-3 border-t border-black/10 pt-5">
+                  <div className="mt-5 flex flex-wrap gap-x-8 gap-y-3 border-t border-white/10 pt-5">
                     <Toggle label="Active (live on site)" name="is_active" checked={Boolean(editForm.is_active)} onChange={handleEditField} />
                     <Toggle label="Featured on homepage" name="is_featured" checked={Boolean(editForm.is_featured)} onChange={handleEditField} />
                     <Toggle label="Price TBA" name="is_tba" checked={Boolean(editForm.is_tba)} onChange={handleEditField} />
@@ -1212,7 +1270,7 @@ export default function AdminWorklist({ onLogout }) {
                 </Panel>
               </div>
 
-              <div className="flex justify-end gap-3 border-t border-black/10 bg-white px-6 py-4">
+              <div className="flex justify-end gap-3 border-t border-white/10 bg-black/60 px-6 py-4 backdrop-blur-xl">
                 <button type="button" onClick={() => setEditingVehicle(null)} className={btnGhost}>
                   Cancel
                 </button>

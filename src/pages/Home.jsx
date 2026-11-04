@@ -34,9 +34,9 @@ import SEOHead from '../components/SEOHead';
 const ROUTES = { vehicles: '/vehicles', calculator: '/calculator', compare: '/compare' };
 
 const categories = [
-  { label: 'SUV', to: '/vehicles?search=SUV', icon: Mountain },
-  { label: 'Hatchback', to: '/vehicles?search=Hatchback', icon: CarFront },
-  { label: 'Sedan', to: '/vehicles?search=Sedan', icon: Car },
+  { label: 'SUV', to: '/vehicles?body_type=SUV', icon: Mountain },
+  { label: 'Hatchback', to: '/vehicles?body_type=Hatchback', icon: CarFront },
+  { label: 'Sedan', to: '/vehicles?body_type=Sedan', icon: Car },
   { label: 'Electric', to: '/vehicles?search=Electric', icon: Zap },
   { label: 'CNG', to: '/vehicles?search=CNG', icon: Leaf },
   { label: 'Petrol', to: '/vehicles?search=Petrol', icon: Fuel },
@@ -230,6 +230,7 @@ function PriceGauge() {
 /* ------------------------------------------------------------------ */
 
 function PopularCard({ vehicle }) {
+  const [imageFailed, setImageFailed] = useState(false);
   const img = vehicleImage(vehicle);
   const brand = pick(vehicle, ['brand_name', 'brand', 'make']);
   const model = pick(vehicle, ['model_name', 'model', 'name']);
@@ -246,11 +247,12 @@ function PopularCard({ vehicle }) {
       className={`group relative flex h-full flex-col overflow-hidden rounded-3xl border border-white/10 bg-[#11161d] text-white ${focusRing} focus-visible:ring-offset-[#0a0e13]`}
     >
       <div className="relative aspect-[4/3] overflow-hidden bg-[radial-gradient(ellipse_at_50%_100%,#2a3340,#0f141a)]">
-        {img ? (
+        {img && !imageFailed ? (
           <img
             src={img}
             alt={title}
             loading="lazy"
+            onError={() => setImageFailed(true)}
             className="h-full w-full object-cover motion-safe:transition-transform motion-safe:duration-700 motion-safe:group-hover:scale-105"
           />
         ) : (
@@ -303,6 +305,8 @@ function PopularCard({ vehicle }) {
 export default function Home() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
+  const [minPrice, setMinPrice] = useState(5);
+  const [maxPrice, setMaxPrice] = useState(50);
   const [wordIndex, setWordIndex] = useState(0);
 
   useEffect(() => {
@@ -327,8 +331,8 @@ export default function Home() {
       Array.isArray(vehiclesData?.results)
         ? vehiclesData.results
         : Array.isArray(vehiclesData)
-        ? vehiclesData
-        : [],
+          ? vehiclesData
+          : [],
     [vehiclesData],
   );
 
@@ -344,12 +348,12 @@ export default function Home() {
     navigate(query ? `${ROUTES.vehicles}?search=${encodeURIComponent(query)}` : ROUTES.vehicles);
   };
 
-  const container = 'mx-auto w-full max-w-[1320px] px-5 sm:px-8 lg:px-12';
+  const container = 'mx-auto w-full min-w-0 max-w-[1320px] px-5 sm:px-8 lg:px-12';
   const h2 = 'font-extrabold leading-[1] tracking-[-0.025em]';
   const h2Size = 'text-[clamp(1.9rem,4.4vw,3.75rem)]';
 
   return (
-    <div className="bg-[#0a0e13] text-[#eef1f3]" style={body}>
+    <div className="w-full min-w-0 overflow-x-clip bg-[#0a0e13] text-[#eef1f3]" style={body}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,500..900&family=Hanken+Grotesk:wght@400;500;600;700&display=swap');
         @keyframes cg-rise { from { opacity: 0; transform: translateY(28px); } to { opacity: 1; transform: none; } }
@@ -446,24 +450,164 @@ export default function Home() {
         </HeroMedia>
       </section>
 
-      {/* BROWSE BY TYPE */}
-      <section className="border-y border-white/10 bg-[#0f141b]" aria-labelledby="explore-title">
-        <div className={`${container} py-8 sm:py-10`}>
-          <h2 id="explore-title" className="text-2xl font-extrabold tracking-[-0.02em] sm:text-3xl" style={wide}>
-            Browse by type
-          </h2>
-          <ul className="mt-5 flex gap-3 overflow-x-auto pb-2 [scrollbar-width:none] sm:flex-wrap sm:overflow-visible">
-            {categories.map(({ label, to, icon: Icon }) => (
-              <li key={label} className="shrink-0">
-                <Link to={to} className={`${chip} h-12 px-5 text-base ${focusRing} focus-visible:ring-offset-[#0f141b]`}>
-                  <Icon className="h-4 w-4" aria-hidden="true" />
-                  {label}
-                </Link>
-              </li>
-            ))}
-          </ul>
+      {/* PRICE RANGE AND BODY TYPE */}
+     <section
+  className="relative overflow-hidden border-y border-white/10 bg-[#0b0f15]"
+  aria-labelledby="explore-title"
+>
+  {/* decorative backdrop */}
+  <div aria-hidden="true" className="pointer-events-none absolute inset-0">
+    <div className="absolute -left-24 -top-24 h-72 w-72 rounded-full bg-[#ffb224]/20 blur-[100px]" />
+    <div className="absolute -bottom-32 right-0 h-80 w-80 rounded-full bg-[#ff6b3d]/10 blur-[120px]" />
+    <div
+      className="absolute inset-0 opacity-[0.07]"
+      style={{
+        backgroundImage:
+          "linear-gradient(to right, #fff 1px, transparent 1px), linear-gradient(to bottom, #fff 1px, transparent 1px)",
+        backgroundSize: "48px 48px",
+        maskImage: "radial-gradient(ellipse at center, black 30%, transparent 75%)",
+        WebkitMaskImage: "radial-gradient(ellipse at center, black 30%, transparent 75%)",
+      }}
+    />
+  </div>
+
+  <div className={`${container} relative grid gap-10 py-12 sm:py-16 lg:grid-cols-[1.15fr_1fr] lg:items-center lg:gap-16`}>
+    {/* LEFT: price range */}
+    <div>
+      <p className="mb-3 inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.28em] text-[#ffb224]">
+        <span className="h-px w-8 bg-[#ffb224]" aria-hidden="true" />
+        Find your drive
+      </p>
+
+      <h2
+        id="explore-title"
+        className="text-3xl font-extrabold tracking-[-0.03em] sm:text-4xl"
+        style={wide}
+      >
+        Car price range
+      </h2>
+      <p className="mt-2 text-sm text-white/60">
+        Choose your budget in lakhs (ex-showroom).
+      </p>
+
+      {/* big live readout */}
+      <div className="mt-7 flex flex-wrap items-baseline gap-x-3 gap-y-1" aria-live="polite">
+        <span
+          className="bg-gradient-to-b from-white to-[#ffb224] bg-clip-text text-5xl font-extrabold tracking-[-0.04em] text-transparent sm:text-6xl"
+          style={wide}
+        >
+          ₹{minPrice}
+        </span>
+        <span className="text-2xl font-light text-white/30" aria-hidden="true">—</span>
+        <span
+          className="bg-gradient-to-b from-white to-[#ffb224] bg-clip-text text-5xl font-extrabold tracking-[-0.04em] text-transparent sm:text-6xl"
+          style={wide}
+        >
+          ₹{maxPrice}
+        </span>
+        <span className="ml-1 text-sm font-semibold uppercase tracking-[0.2em] text-white/50">lakh</span>
+      </div>
+
+      {/* visual range bar (display only) */}
+      <div className="mt-6 max-w-[560px]" aria-hidden="true">
+        <div className="relative h-2 rounded-full bg-white/10">
+          <div
+            className="absolute top-0 h-full rounded-full bg-gradient-to-r from-[#ffb224] to-[#ff6b3d] shadow-[0_0_18px_rgba(255,178,36,0.55)]"
+            style={{
+              left: `${((minPrice - 1) / 99) * 100}%`,
+              width: `${((maxPrice - minPrice) / 99) * 100}%`,
+            }}
+          />
         </div>
-      </section>
+        <div className="mt-2 flex justify-between text-[10px] font-semibold uppercase tracking-widest text-white/30">
+          <span>₹1L</span>
+          <span>₹25L</span>
+          <span>₹50L</span>
+          <span>₹75L</span>
+          <span>₹100L</span>
+        </div>
+      </div>
+
+      {/* sliders */}
+      <div className="mt-6 grid w-full min-w-0 max-w-[560px] gap-4 rounded-2xl border border-white/10 bg-white/[0.03] p-5 backdrop-blur sm:grid-cols-2 sm:gap-6">
+        <label className="text-xs font-bold uppercase tracking-[0.18em] text-white/60">
+          From <span className="ml-2 text-sm normal-case tracking-normal text-[#ffb224]">₹{minPrice} lakh</span>
+          <input
+            aria-label="Minimum car price in lakhs"
+            type="range"
+            min="1"
+            max="99"
+            step="1"
+            value={minPrice}
+            onChange={(event) => setMinPrice(Math.min(Number(event.target.value), maxPrice - 1))}
+            className="mt-3 block w-full min-w-0 max-w-full cursor-pointer accent-[#ffb224]"
+          />
+        </label>
+        <label className="text-xs font-bold uppercase tracking-[0.18em] text-white/60">
+          To <span className="ml-2 text-sm normal-case tracking-normal text-[#ffb224]">₹{maxPrice} lakh</span>
+          <input
+            aria-label="Maximum car price in lakhs"
+            type="range"
+            min="2"
+            max="100"
+            step="1"
+            value={maxPrice}
+            onChange={(event) => setMaxPrice(Math.max(Number(event.target.value), minPrice + 1))}
+            className="mt-3 block w-full min-w-0 max-w-full cursor-pointer accent-[#ffb224]"
+          />
+        </label>
+      </div>
+
+      <button
+        type="button"
+        onClick={() => navigate(`/vehicles?min_price=${minPrice * 100000}&max_price=${maxPrice * 100000}`)}
+        className={`${btnPrimary} group mt-6 h-12 px-7 text-sm shadow-[0_10px_30px_-8px_rgba(255,178,36,0.6)] transition-transform duration-200 hover:-translate-y-0.5`}
+      >
+        <Search className="h-4 w-4 transition-transform duration-200 group-hover:scale-110" aria-hidden="true" />
+        Search this price range
+      </button>
+    </div>
+
+    {/* RIGHT: browse by type */}
+    <div className="relative rounded-3xl border border-white/10 bg-gradient-to-br from-white/[0.06] to-white/[0.01] p-6 sm:p-8">
+      {/* corner accent */}
+      <span
+        aria-hidden="true"
+        className="absolute -right-px -top-px h-16 w-16 rounded-tr-3xl border-r-2 border-t-2 border-[#ffb224]/70"
+      />
+      <span
+        aria-hidden="true"
+        className="absolute -bottom-px -left-px h-16 w-16 rounded-bl-3xl border-b-2 border-l-2 border-[#ffb224]/30"
+      />
+
+      <h3 className="text-xl font-extrabold tracking-[-0.02em] sm:text-2xl" style={wide}>
+        Browse by type
+      </h3>
+      <div className="mt-3 flex items-center gap-2" aria-hidden="true">
+        <span className="h-0.5 w-10 rounded bg-[#ffb224]" />
+        <span className="h-0.5 w-3 rounded bg-[#ffb224]/60" />
+        <span className="h-0.5 w-1.5 rounded bg-[#ffb224]/30" />
+      </div>
+
+      <ul className="mt-6 grid grid-cols-2 gap-2.5 sm:flex sm:flex-wrap sm:gap-3">
+        {categories.map(({ label, to, icon: Icon }) => (
+          <li key={label} className="min-w-0">
+            <Link
+              to={to}
+              className={`${chip} group h-11 w-full justify-center px-3 text-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-[#ffb224]/60 hover:shadow-[0_8px_24px_-8px_rgba(255,178,36,0.5)] sm:h-12 sm:w-auto sm:px-5 sm:text-base ${focusRing} focus-visible:ring-offset-[#0b0f15]`}
+            >
+              <Icon
+                className="h-4 w-4 transition-colors duration-200 group-hover:text-[#ffb224]"
+                aria-hidden="true"
+              />
+              {label}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </div>
+</section>
 
       {/* POPULAR CARS */}
       <section className="py-16 sm:py-24" aria-labelledby="popular-title">
